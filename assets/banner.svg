@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/><stop offset=".5" stop-color="#4f46e5"/><stop offset="1" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <radialGradient id="sun"><stop offset="0" stop-color="#fef08a"/><stop offset=".6" stop-color="#facc15"/><stop offset="1" stop-color="#f59e0b"/></radialGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#fde047" stop-opacity=".45"/><stop offset="1" stop-color="#fde047" stop-opacity="0"/></radialGradient>
+    <linearGradient id="txt" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#fde047"/></linearGradient>
+  </defs>
+  <rect width="1200" height="320" fill="url(#bg)"/>
+
+  <!-- matahari -->
+  <circle cx="930" cy="130" r="150" fill="url(#glow)">
+    <animate attributeName="r" values="140;165;140" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <g transform="translate(930 130)">
+    <g stroke="#fde047" stroke-width="6" stroke-linecap="round" opacity=".85">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="30s" repeatCount="indefinite"/>
+      <line x1="0" y1="-90" x2="0" y2="-110"/><line x1="0" y1="90" x2="0" y2="110"/>
+      <line x1="-90" y1="0" x2="-110" y2="0"/><line x1="90" y1="0" x2="110" y2="0"/>
+      <line x1="64" y1="64" x2="78" y2="78"/><line x1="-64" y1="-64" x2="-78" y2="-78"/>
+      <line x1="64" y1="-64" x2="78" y2="-78"/><line x1="-64" y1="64" x2="-78" y2="78"/>
+    </g>
+    <circle r="70" fill="url(#sun)"/>
+  </g>
+
+  <!-- awan -->
+  <g fill="#fff">
+    <g opacity=".95">
+      <animateTransform attributeName="transform" type="translate" values="0 0;-25 0;0 0" dur="8s" repeatCount="indefinite"/>
+      <path d="M850 250h190a45 45 0 0 0 0-90 65 65 0 0 0-124 10 40 40 0 0 0-66 80z"/>
+    </g>
+    <g opacity=".5">
+      <animateTransform attributeName="transform" type="translate" values="0 0;30 0;0 0" dur="10s" repeatCount="indefinite"/>
+      <path d="M660 110h110a28 28 0 0 0 0-56 40 40 0 0 0-76 6 25 25 0 0 0-34 50z"/>
+    </g>
+  </g>
+
+  <!-- hujan -->
+  <g stroke="#bae6fd" stroke-width="3" stroke-linecap="round" opacity=".8">
+    <line x1="900" y1="265" x2="894" y2="285"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></line>
+    <line x1="950" y1="265" x2="944" y2="285"><animate attributeName="opacity" values="0;1;0" dur="1.2s" begin=".4s" repeatCount="indefinite"/></line>
+    <line x1="1000" y1="265" x2="994" y2="285"><animate attributeName="opacity" values="0;1;0" dur="1.2s" begin=".8s" repeatCount="indefinite"/></line>
+  </g>
+
+  <!-- teks -->
+  <text x="80" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="92" font-weight="800" fill="url(#txt)">CuacaKu</text>
+  <text x="84" y="200" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#e0e7ff">Cuaca real-time &amp; prakiraan 7 hari</text>
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="600" fill="#fff">
+    <rect x="84" y="228" width="96" height="36" rx="18" fill="#ffffff26"/><text x="132" y="252" text-anchor="middle">React</text>
+    <rect x="192" y="228" width="140" height="36" rx="18" fill="#ffffff26"/><text x="262" y="252" text-anchor="middle">TypeScript</text>
+    <rect x="344" y="228" width="118" height="36" rx="18" fill="#ffffff26"/><text x="403" y="252" text-anchor="middle">Tailwind</text>
+  </g>
+</svg>
