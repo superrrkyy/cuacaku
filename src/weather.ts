@@ -63,7 +63,7 @@ export async function getWeather(lat: number, lon: number, options: RequestOptio
       time: t,
       temp: d.hourly.temperature_2m[startIdx + i],
       code: d.hourly.weather_code[startIdx + i],
-      rain: d.hourly.precipitation_probability[startIdx + i] ?? 0,
+      rain: d.hourly.precipitation_probability[startIdx + i],
       isDay: d.hourly.is_day[startIdx + i] === 1,
     })),
     daily: d.daily.time.map((t: string, i: number) => ({
