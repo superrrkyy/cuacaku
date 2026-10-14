@@ -10,7 +10,7 @@ export default defineConfig({
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   test: {
-    environment: "node", // test saat ini murni logika, tanpa DOM
+    environment: "node", // component tests opt into jsdom via per-file annotation
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     reporters: "default",
   },

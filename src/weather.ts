@@ -1,50 +1,29 @@
 // Data cuaca dari Open-Meteo (gratis, tanpa API key)
 
-export interface Place {
-  id: number;
-  name: string;
-  admin1?: string;
-  country?: string;
-  latitude: number;
-  longitude: number;
+import type { Place, Weather } from "./types/weather";
+export type { Place, Weather } from "./types/weather";
+import { ApiError, requestJson, type RequestOptions } from "./lib/api";
+import { isRecord, isPlace, validCoordinates, validateWeather } from "./lib/validation";
+export { hour, dayName, longDate } from "./lib/dates";
+
+export async function searchPlaces(q: string, options: RequestOptions = {}): Promise<Place[]> {
+  const query = q.trim();
+  if (query.length < 2) return [];
+  const params = new URLSearchParams({ name: query, count: "6", language: "id" });
+  const data = await requestJson(`https://geocoding-api.open-meteo.com/v1/search?${params}`, options);
+  if (!isRecord(data) || "error" in data) throw new ApiError("INVALID_RESPONSE");
+  // Open-Meteo omits results entirely for a valid search with no matches.
+  if (!("results" in data)) {
+    if (Object.keys(data).every(k => k === "generationtime_ms") &&
+        (data.generationtime_ms === undefined || (typeof data.generationtime_ms === "number" && Number.isFinite(data.generationtime_ms)))) return [];
+    throw new ApiError("INVALID_RESPONSE");
+  }
+  if (!Array.isArray(data.results) || !data.results.every(isPlace)) throw new ApiError("INVALID_RESPONSE");
+  return data.results;
 }
 
-export interface Weather {
-  timezone: string;
-  current: {
-    time: string;
-    temperature: number;
-    feelsLike: number;
-    humidity: number;
-    wind: number;
-    windDir: number;
-    pressure: number;
-    code: number;
-    isDay: boolean;
-    precipitation: number;
-  };
-  hourly: { time: string; temp: number; code: number; rain: number; isDay: boolean }[];
-  daily: {
-    date: string;
-    code: number;
-    max: number;
-    min: number;
-    rain: number;
-    sunrise: string;
-    sunset: string;
-    uv: number;
-  }[];
-}
-
-export async function searchPlaces(q: string): Promise<Place[]> {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=id`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Gagal mencari kota");
-  const data = await res.json();
-  return data.results ?? [];
-}
-
-export async function getWeather(lat: number, lon: number): Promise<Weather> {
+export async function getWeather(lat: number, lon: number, options: RequestOptions = {}): Promise<Weather> {
+  if (!validCoordinates(lat, lon)) throw new ApiError("INVALID_COORDINATES");
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
@@ -55,13 +34,15 @@ export async function getWeather(lat: number, lon: number): Promise<Weather> {
     timezone: "auto",
     forecast_days: "7",
   });
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!res.ok) throw new Error("Gagal memuat cuaca");
-  const d = await res.json();
+  const raw = await requestJson(`https://api.open-meteo.com/v1/forecast?${params}`, options);
+  const d = validateWeather(raw);
 
   // ambil 24 jam ke depan mulai dari jam sekarang
   const nowHour = d.current.time.slice(0, 13);
-  const startIdx = Math.max(0, d.hourly.time.findIndex((t: string) => t.slice(0, 13) === nowHour));
+  const startIdx = d.hourly.time.findIndex(t => t.slice(0, 13) === nowHour);
+  if (startIdx < 0 || d.hourly.time.length - startIdx < 24 || d.daily.time[0] !== d.current.time.slice(0, 10)) {
+    throw new ApiError("INVALID_RESPONSE");
+  }
 
   return {
     timezone: d.timezone,
@@ -155,20 +136,6 @@ export function theme(code: number, isDay: boolean) {
   }
 }
 
-// Helper format
-const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-export const hour = (iso: string) => iso.slice(11, 16);
-export function dayName(iso: string, i: number) {
-  if (i === 0) return "Hari ini";
-  if (i === 1) return "Besok";
-  const d = new Date(iso + "T00:00:00");
-  return HARI[d.getDay()];
-}
-export function longDate(iso: string) {
-  const d = new Date(iso);
-  return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
-}
 export function windDir(deg: number) {
   return ["U", "TL", "T", "TG", "S", "BD", "B", "BL"][Math.round(deg / 45) % 8];
 }
