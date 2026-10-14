@@ -11,10 +11,10 @@ describe("Phase 2.5 — local day parts", () => {
   });
 
   it("classifies dawn, day, dusk and night", () => {
-    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T00:00:00Z"))).toBe("dawn");
-    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T03:00:00Z"))).toBe("day");
-    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T11:00:00Z"))).toBe("dusk");
-    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T13:00:00Z"))).toBe("night");
+    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T22:00:00Z"))).toBe("dawn");
+    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T00:00:00Z"))).toBe("day");
+    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T10:00:00Z"))).toBe("dusk");
+    expect(getDayPart("Asia/Jakarta", new Date("2026-10-14T12:00:00Z"))).toBe("night");
   });
 
   it("fails safely for an invalid timezone", () => {
