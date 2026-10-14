@@ -29,6 +29,7 @@ function localParts(iso: string, timezone: string): string {
   return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const HARI_PENDEK = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 export const hour = (iso: string, timezone = "UTC") => localParts(iso, timezone).slice(11, 16) || "—";
 export function dayName(iso: string, i: number, timezone = "UTC") {
@@ -49,6 +50,24 @@ export function shortDate(iso: string, timezone = "UTC") {
   const local = localParts(iso, timezone);
   return local ? `${Number(local.slice(8, 10))} ${BULAN[Number(local.slice(5, 7)) - 1]}` : "—";
 }
+
+/** Calendar date (YYYY-MM-DD) of an instant as seen in the location timezone. "" when unknown. */
+export function localDate(value: unknown, timezone = "UTC"): string {
+  if (typeof value !== "string") return "";
+  const date = localParts(value, timezone).slice(0, 10);
+  return isLocalDate(date) ? date : "";
+}
+/** Shift a validated calendar date by whole days. Never touches the browser clock. */
+export function addDays(date: string, days: number): string {
+  if (!isLocalDate(date) || !Number.isSafeInteger(days)) return "";
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+}
+const weekday = (date: string, names: string[]) =>
+  date ? names[new Date(`${date}T00:00:00Z`).getUTCDay()] : "—";
+/** Full weekday name in the location timezone, e.g. "Kamis". */
+export const weekdayName = (iso: string, timezone = "UTC") => weekday(localDate(iso, timezone), HARI);
+/** Compact weekday name for dense axes, e.g. "Kam". */
+export const weekdayShort = (iso: string, timezone = "UTC") => weekday(localDate(iso, timezone), HARI_PENDEK);
 
 /** Compare calendar carriers in the location's timezone, never the browser's timezone. */
 export function sunProgress(sunrise: string, sunset: string, timezone: string, now = new Date()): number | null {

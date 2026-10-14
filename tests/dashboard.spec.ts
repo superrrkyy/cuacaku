@@ -135,6 +135,44 @@ for (const width of [320, 375, 390, 768, 1024, 1280, 1440]) {
     });
   });
 }
+for (const width of [320, 1440]) {
+  test(`7-day trend chart readable and contained at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await mockWeather(page);
+    await page.goto("./");
+    const chart = page.locator(".chart-panel--daily");
+    await expect(
+      chart.getByRole("heading", { name: "TREN SUHU 7 HARI" }),
+    ).toBeVisible();
+    // The SVG is never the only source: summary, axis labels and table repeat every value.
+    await expect(chart.locator("svg[role=img]")).toHaveCount(1);
+    await expect(chart.locator(".chart-axis > div")).toHaveCount(7);
+    await expect(
+      chart.getByText(/Suhu berkisar 23° hingga 34° selama 7 hari ke depan, terhangat pada hari/),
+    ).toBeVisible();
+    await chart.locator("summary").click();
+    await expect(chart.locator("tbody tr")).toHaveCount(7);
+    // Current day is marked by state, not by list position.
+    await expect(page.locator('.daily-row[aria-current="date"]')).toHaveCount(1);
+    // Chart and its labels stay inside the panel, so nothing can push the page sideways.
+    const panel = (await chart.boundingBox())!;
+    const frame = (await chart.locator(".chart-frame").boundingBox())!;
+    expect(frame.x).toBeGreaterThanOrEqual(panel.x - 0.5);
+    expect(frame.x + frame.width).toBeLessThanOrEqual(panel.x + panel.width + 0.5);
+    const cells = await chart.locator(".chart-axis > div").evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const box = node.getBoundingClientRect();
+        return { left: box.left, right: box.right };
+      }),
+    );
+    expect(cells[0].left).toBeGreaterThanOrEqual(frame.x - 0.5);
+    expect(cells[cells.length - 1].right).toBeLessThanOrEqual(frame.x + frame.width + 0.5);
+    for (let i = 1; i < cells.length; i += 1)
+      expect(cells[i].left).toBeGreaterThan(cells[i - 1].left);
+    await noPageOverflow(page);
+  });
+}
+
 test("keyboard search, favorite selection/removal/clear and persistence", async ({
   page,
 }) => {
@@ -195,6 +233,18 @@ test("reduced motion freezes atmosphere, reveal, spinner and skeleton", async ({
       .getByRole("combobox")
       .evaluate((el) => getComputedStyle(el).transitionDuration),
   ).toBe("0s");
+  expect(
+    await page
+      .locator(".chart-frame")
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationName),
+  ).toBe("none");
+  expect(
+    await page
+      .locator(".daily-row")
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationName),
+  ).toBe("none");
   await page.route("https://api.open-meteo.com/**", () => {});
   await page.getByRole("button", { name: "Muat ulang cuaca" }).click();
   await expect(page.getByText("Memuat cuaca Jakarta...")).toBeVisible();

@@ -125,8 +125,19 @@ describe("getWeather()", () => {
     expect(w.hourly[0].time).toBe(iso(7));
 
     expect(w.daily).toHaveLength(2);
-    expect(w.daily[1].rain).toBe(0); // null → 0
+    expect(w.daily[1].rain).toBeNull(); // null stays unknown, never shown as 0%
     expect(w.daily[1].uv).toBe(0); // null → 0
+  });
+
+  it("preserves unavailable daily probability instead of inventing zero", async () => {
+    const raw = structuredClone(fixture);
+    const probabilities: (number | null)[] = [...raw.daily.precipitation_probability_max];
+    probabilities[1] = null;
+    probabilities[0] = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => okJson({ ...raw, daily: { ...raw.daily, precipitation_probability_max: probabilities } })));
+    const result = await getWeather(0, 0);
+    expect(result.daily[1].rain).toBeNull();
+    expect(result.daily[0].rain).toBe(0);
   });
 
   it("preserves unavailable hourly probability instead of inventing zero", async () => {

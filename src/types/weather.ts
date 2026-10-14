@@ -29,7 +29,8 @@ export interface Weather {
     code: number;
     max: number;
     min: number;
-    rain: number;
+    /** Null when Open-Meteo has no probability for the day; never displayed as 0. */
+    rain: number | null;
     sunrise: string;
     sunset: string;
     uv: number;
