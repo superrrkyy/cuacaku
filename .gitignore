@@ -37,3 +37,7 @@ Thumbs.db
 coverage/
 .vite/
 *.tsbuildinfo
+
+# browser checks (regenerate locally)
+test-results/
+playwright-report/
