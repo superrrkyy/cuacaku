@@ -72,6 +72,8 @@ describe("daily trend", () => {
     expect(view.container.querySelector('[aria-labelledby]')?.textContent).toContain(
       "TREN SUHU 7 HARI",
     );
+    // "°" is unreliable in speech output, so the unit is spelled out for assistive tech.
+    expect(summary()).toContain("Semua nilai dalam derajat Celsius.");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -182,6 +184,7 @@ describe("hourly trend", () => {
     expect(view.container.querySelectorAll(".chart-axis > div")).toHaveLength(4);
     expect(summary()).toContain("Suhu berkisar 25° hingga 48° dalam 24 jam ke depan.");
     expect(view.container.querySelector("summary")?.textContent).toBe("Lihat data suhu per jam");
+    expect(summary()).toContain("Semua nilai dalam derajat Celsius.");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

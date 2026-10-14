@@ -171,6 +171,8 @@ export default function TemperatureChart({ data, mode = "hourly" }: Props) {
       <p className="chart-summary" id={summaryId}>
         Suhu berkisar <strong>{Math.round(low)}°</strong> hingga <strong>{Math.round(high)}°</strong>
         <span> {period}.</span>
+        {/* The degree sign is not spoken reliably by every screen reader. */}
+        <span className="sr-only"> Semua nilai dalam derajat Celsius.</span>
       </p>
       <div className="chart-frame">
         <svg
