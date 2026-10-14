@@ -1,58 +1,72 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Search from "./components/Search";
 import {
-  Place, Weather, getWeather, info, icon, theme, hour, dayName, longDate, windDir, uvLabel,
+  Place, info, icon, theme, hour, dayName, longDate, windDir, uvLabel,
 } from "./weather";
+
+import { readPlace, readFavorites, writeStorage } from "./lib/storage";
+import { errorMessage, isAbortError } from "./lib/api";
+import { GeolocationError, locatePlace } from "./lib/geolocation";
+import { useOnline } from "./hooks/useOnline";
+import { useWeather } from "./hooks/useWeather";
 
 const DEFAULT: Place = { id: 1642911, name: "Jakarta", admin1: "DKI Jakarta", country: "Indonesia", latitude: -6.2146, longitude: 106.8451 };
 
-const load = <T,>(k: string, d: T): T => {
-  try { return JSON.parse(localStorage.getItem(k) ?? "") ?? d; } catch { return d; }
-};
-
 export default function App() {
-  const [place, setPlace] = useState<Place>(() => load("cuacaku_place", DEFAULT));
-  const [favs, setFavs] = useState<Place[]>(() => load("cuacaku_favs", []));
-  const [data, setData] = useState<Weather | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [place, setPlace] = useState<Place>(() => readPlace(DEFAULT));
+  const [favs, setFavs] = useState<Place[]>(readFavorites);
+  const online = useOnline();
+  const { data, error, status, refresh } = useWeather(place, online);
+  const loading = status === "loading";
   const [toast, setToast] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const locationRequest = useRef<AbortController | null>(null);
 
-  const notify = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2200); };
-
-  const fetchWeather = useCallback(async (p: Place) => {
-    setLoading(true); setError("");
-    try { setData(await getWeather(p.latitude, p.longitude)); }
-    catch { setError("Gagal memuat data cuaca. Periksa koneksi internetmu."); }
-    finally { setLoading(false); }
+  const notify = (message: string) => {
+    clearTimeout(toastTimer.current);
+    setToast(message);
+    toastTimer.current = setTimeout(() => setToast(""), 2200);
+  };
+  useEffect(() => () => {
+    clearTimeout(toastTimer.current);
+    locationRequest.current?.abort();
+    locationRequest.current = null;
   }, []);
-
   useEffect(() => {
-    fetchWeather(place);
-    localStorage.setItem("cuacaku_place", JSON.stringify(place));
-    const t = setInterval(() => fetchWeather(place), 10 * 60 * 1000); // refresh tiap 10 menit
-    return () => clearInterval(t);
-  }, [place, fetchWeather]);
+    if (!writeStorage("cuacaku_place", place)) notify("Penyimpanan tidak tersedia. Perubahan hanya berlaku selama sesi ini.");
+  }, [place]);
+  useEffect(() => {
+    if (!writeStorage("cuacaku_favs", favs)) notify("Favorit belum tersimpan di perangkat. Tetap tersedia selama sesi ini.");
+  }, [favs]);
 
-  useEffect(() => { localStorage.setItem("cuacaku_favs", JSON.stringify(favs)); }, [favs]);
-
-  const locate = () => {
-    if (!navigator.geolocation) return notify("Browser tidak mendukung lokasi");
-    notify("📍 Mencari lokasimu...");
-    navigator.geolocation.getCurrentPosition(
-      async pos => {
-        const { latitude, longitude } = pos.coords;
-        let name = "Lokasiku";
-        try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=id&zoom=10`);
-          const j = await r.json();
-          name = j.address?.city || j.address?.town || j.address?.county || j.address?.state || name;
-        } catch { /* pakai nama default */ }
-        setPlace({ id: Date.now(), name, latitude, longitude });
-      },
-      () => notify("⚠️ Izin lokasi ditolak"),
-      { timeout: 10000 }
-    );
+  const selectPlace = (selected: Place) => {
+    locationRequest.current?.abort();
+    locationRequest.current = null;
+    setLocating(false);
+    setLocationError("");
+    setPlace(selected);
+  };
+  const locate = async () => {
+    if (locationRequest.current) return;
+    const controller = new AbortController();
+    locationRequest.current = controller;
+    setLocating(true);
+    setLocationError("");
+    try {
+      const selected = await locatePlace(controller.signal);
+      if (!controller.signal.aborted) setPlace(selected);
+    } catch (error) {
+      if (!controller.signal.aborted && !isAbortError(error)) {
+        setLocationError(error instanceof GeolocationError ? error.message : errorMessage(error));
+      }
+    } finally {
+      if (locationRequest.current === controller) {
+        locationRequest.current = null;
+        setLocating(false);
+      }
+    }
   };
 
   const isFav = favs.some(f => f.name === place.name && Math.abs(f.latitude - place.latitude) < 0.01);
@@ -92,18 +106,22 @@ export default function App() {
         {/* header */}
         <header className="mb-4 flex items-center justify-between">
           <h1 className="text-xl font-extrabold tracking-wide">⛅ Cuaca<span className="text-yellow-300">Ku</span></h1>
-          <button onClick={() => fetchWeather(place)} className="rounded-full px-3 py-1 text-sm text-white/80 hover:bg-white/10" title="Muat ulang">
+          <button onClick={() => void refresh()} disabled={loading || !online} className="rounded-full px-3 py-1 text-sm text-white/80 hover:bg-white/10 disabled:opacity-50" title="Muat ulang" aria-label="Muat ulang cuaca">
             <span className={loading ? "inline-block animate-spin" : ""}>🔄</span>
           </button>
         </header>
 
-        <Search onSelect={setPlace} onLocate={locate} />
+        <Search onSelect={selectPlace} onLocate={() => void locate()} online={online} locating={locating} />
+        {!online && <p role="status" className="glass mt-3 p-3 text-sm">Perangkat sedang offline. Cuaca akan dimuat sekali saat koneksi kembali.</p>}
+        {locating && <p role="status" className="mt-3 text-sm">📍 Mencari lokasimu...</p>}
+        {locationError && <p role="alert" className="glass mt-3 p-3 text-sm">{locationError}</p>}
+        {loading && <p role="status" className="mt-3 text-sm">Memuat cuaca {place.name}...</p>}
 
         {/* favorit */}
         {favs.length > 0 && (
           <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
             {favs.map(f => (
-              <button key={`${f.name}${f.latitude}`} onClick={() => setPlace(f)}
+              <button key={`${f.name}${f.latitude}`} onClick={() => selectPlace(f)}
                 className={`shrink-0 rounded-full border px-3 py-1 text-sm transition ${f.name === place.name ? "border-white bg-white text-indigo-900 font-semibold" : "border-white/25 bg-white/10 hover:bg-white/20"}`}>
                 ⭐ {f.name}
               </button>
@@ -113,13 +131,13 @@ export default function App() {
 
         {error && (
           <div className="glass mt-6 p-6 text-center">
-            <p className="mb-3">😢 {error}</p>
-            <button onClick={() => fetchWeather(place)} className="rounded-xl bg-white px-4 py-2 font-semibold text-indigo-900">Coba lagi</button>
+            <p role="alert" className="mb-3">😢 {error}</p>
+            <button onClick={() => void refresh()} disabled={loading || !online} className="rounded-xl bg-white px-4 py-2 font-semibold text-indigo-900 disabled:opacity-50">Coba lagi</button>
           </div>
         )}
 
-        {!data && !error && (
-          <div className="mt-6 space-y-4">
+        {loading && !data && (
+          <div aria-hidden="true" className="mt-6 space-y-4">
             {[260, 120, 300].map((h, i) => <div key={i} className="glass animate-pulse" style={{ height: h }} />)}
           </div>
         )}
@@ -130,10 +148,10 @@ export default function App() {
             <section className="fade-up text-center">
               <div className="flex items-center justify-center gap-2">
                 <h2 className="text-2xl font-bold">📍 {place.name}</h2>
-                <button onClick={toggleFav} className="text-2xl transition active:scale-90" title="Favorit">{isFav ? "⭐" : "☆"}</button>
+                <button onClick={toggleFav} className="text-2xl transition active:scale-90" title="Favorit" aria-label={isFav ? "Hapus dari favorit" : "Tambah ke favorit"} aria-pressed={isFav}>{isFav ? "⭐" : "☆"}</button>
               </div>
               <p className="text-sm text-white/70">{[place.admin1, place.country].filter(Boolean).join(", ") || "Lokasi saat ini"}</p>
-              <p className="text-sm text-white/70">{longDate(c.time)} • {hour(c.time)}</p>
+              <p className="text-sm text-white/70">{longDate(c.time, data.timezone)} • {hour(c.time, data.timezone)}</p>
               <div className="float my-2 text-8xl drop-shadow-2xl">{icon(c.code, c.isDay)}</div>
               <div className="text-7xl font-extralight leading-none">{Math.round(c.temperature)}°</div>
               <p className="mt-2 text-xl font-medium">{info(c.code).label}</p>
@@ -145,8 +163,8 @@ export default function App() {
               <h3 className="mb-3 text-sm font-semibold text-white/80">🕐 24 JAM KE DEPAN</h3>
               <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
                 {data.hourly.map((h, i) => (
-                  <div key={h.time} className={`flex min-w-[60px] flex-col items-center gap-1 rounded-2xl py-2 ${i === 0 ? "bg-white/20" : ""}`}>
-                    <span className="text-xs text-white/70">{i === 0 ? "Kini" : hour(h.time)}</span>
+                  <div key={`${h.time}-${i}`} className={`flex min-w-[60px] flex-col items-center gap-1 rounded-2xl py-2 ${i === 0 ? "bg-white/20" : ""}`}>
+                    <span className="text-xs text-white/70">{i === 0 ? "Kini" : hour(h.time, data.timezone)}</span>
                     <span className="text-2xl">{icon(h.code, h.isDay)}</span>
                     <span className="font-semibold">{Math.round(h.temp)}°</span>
                     <span className={`text-[11px] ${h.rain >= 50 ? "text-sky-300" : "text-white/50"}`}>💧{h.rain}%</span>
@@ -162,7 +180,7 @@ export default function App() {
                 const span = range.hi - range.lo || 1;
                 return (
                   <div key={d.date} className="flex items-center gap-3 border-b border-white/10 py-2.5 last:border-0">
-                    <span className="w-20 text-sm font-medium">{dayName(d.date, i)}</span>
+                    <span className="w-20 text-sm font-medium">{dayName(d.date, i, data.timezone)}</span>
                     <span className="w-8 text-xl">{icon(d.code)}</span>
                     <span className={`w-12 whitespace-nowrap text-xs ${d.rain >= 50 ? "text-sky-300" : "text-white/50"}`}>💧{d.rain}%</span>
                     <span className="w-8 text-right text-sm text-white/60">{Math.round(d.min)}°</span>
@@ -183,8 +201,8 @@ export default function App() {
                 ["💨", "Angin", `${Math.round(c.wind)} km/j`, `Arah ${windDir(c.windDir)}`],
                 ["🔆", "Indeks UV", `${Math.round(today.uv)}`, uvLabel(today.uv)],
                 ["🌡️", "Tekanan", `${Math.round(c.pressure)}`, "hPa"],
-                ["🌅", "Matahari Terbit", hour(today.sunrise), "Waktu setempat"],
-                ["🌇", "Matahari Terbenam", hour(today.sunset), "Waktu setempat"],
+                ["🌅", "Matahari Terbit", hour(today.sunrise, data.timezone), "Waktu setempat"],
+                ["🌇", "Matahari Terbenam", hour(today.sunset, data.timezone), "Waktu setempat"],
               ].map(([ic, label, val, sub]) => (
                 <div key={label} className="glass p-4">
                   <p className="text-xs font-semibold text-white/70">{ic} {label.toUpperCase()}</p>
@@ -203,7 +221,7 @@ export default function App() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-indigo-900 shadow-xl">
+        <div role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-indigo-900 shadow-xl">
           {toast}
         </div>
       )}
