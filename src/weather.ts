@@ -71,7 +71,8 @@ export async function getWeather(lat: number, lon: number, options: RequestOptio
       code: d.daily.weather_code[i],
       max: d.daily.temperature_2m_max[i],
       min: d.daily.temperature_2m_min[i],
-      rain: d.daily.precipitation_probability_max[i] ?? 0,
+      // Unknown probability stays unknown; the UI shows "—" instead of an invented 0%.
+      rain: d.daily.precipitation_probability_max[i] ?? null,
       sunrise: d.daily.sunrise[i],
       sunset: d.daily.sunset[i],
       uv: d.daily.uv_index_max[i] ?? 0,

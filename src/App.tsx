@@ -234,6 +234,7 @@ export default function App() {
             </div>
             <HourlyForecast data={data} />
             <DailyForecast data={data} />
+            <TemperatureChart data={data} mode="daily" />
             <WeatherDetails data={data} />
           </main>
         )}
