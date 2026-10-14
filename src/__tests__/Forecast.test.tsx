@@ -158,5 +158,5 @@ it("switches clear day/night atmosphere without adding particle nodes", async ()
   expect(
     view.container.querySelector(".atmosphere--clear-night"),
   ).not.toBeNull();
-  expect(view.container.firstElementChild?.children).toHaveLength(0);
+  expect(view.container.querySelectorAll(".weather-particle")).toHaveLength(0);
 });
