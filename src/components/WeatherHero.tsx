@@ -7,6 +7,7 @@ import {
   type Weather,
 } from "../weather";
 import WeatherIcon from "./WeatherIcon";
+import LocalClock from "./LocalClock";
 export default function WeatherHero({
   place,
   data,
@@ -84,10 +85,17 @@ export default function WeatherHero({
           </div>
         ))}
       </dl>
-      <p className="hero-updated muted">
-        {longDate(c.time, data.timezone)}{" "}
-        <span>· Diperbarui {hour(c.time, data.timezone)} waktu setempat</span>
-      </p>
+      <div className="hero-footer">
+        <p className="hero-updated muted">
+          {longDate(c.time, data.timezone)}{" "}
+          <span>· Diperbarui {hour(c.time, data.timezone)} waktu setempat</span>
+        </p>
+        <LocalClock
+          timezone={data.timezone}
+          locationName={place.name}
+          className="hero-local-clock"
+        />
+      </div>
     </section>
   );
 }
