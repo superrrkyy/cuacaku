@@ -1,10 +1,17 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=26&duration=3000&pause=800&color=FDE047&center=true&vCenter=true&width=340&lines=%E2%9B%85+CuacaKu;Cuaca+Real-time;Prakiraan+7+Hari" alt="CuacaKu" />
+<img src="./public/README/weather-cycle.svg" width="180" alt="Animasi siklus matahari dan bulan" />
+
+<img
+  src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=26&duration=3000&pause=800&color=FDE047&center=true&vCenter=true&width=340&lines=%E2%9B%85+CuacaKu;Cuaca+Real-time;Prakiraan+7+Hari"
+  alt="CuacaKu"
+/>
 
 **Aplikasi cuaca real-time berbahasa Indonesia** — cek cuaca sekarang, per jam, dan 7 hari ke depan untuk kota mana pun di dunia.
 
-<a href="https://superrrkyy.github.io/cuacaku/"><img src="https://img.shields.io/badge/🌦️_Buka_Aplikasi-7c3aed?style=for-the-badge" alt="Demo" /></a>
+<a href="https://superrrkyy.github.io/cuacaku/">
+<img src="https://img.shields.io/badge/🌦️_Buka_Aplikasi-7c3aed?style=for-the-badge" alt="Demo" />
+</a>
 
 <img src="https://img.shields.io/badge/React_18-20232A?style=flat-square&logo=react&logoColor=61DAFB" />
 <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" />
