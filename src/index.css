@@ -1420,3 +1420,324 @@ p {
 .today-trends > * {
   min-width: 0;
 }
+
+/* =========================================
+   PHASE 2.3 — DAILY FORECAST
+   ========================================= */
+
+.daily-panel {
+  overflow: hidden;
+}
+
+.daily-list {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+}
+
+.daily-row {
+  display: grid;
+  grid-template-columns:
+    minmax(100px, 1fr)
+    48px
+    minmax(130px, 1.2fr)
+    minmax(170px, 1.8fr);
+
+  align-items: center;
+  gap: 18px;
+
+  min-height: 76px;
+  padding: 12px 10px;
+
+  border-top: 1px solid #ffffff08;
+
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.daily-row:first-child {
+  border-top: 0;
+}
+
+.daily-row:hover {
+  background: #ffffff05;
+}
+
+.daily-row--today {
+  background: #b3e5d208;
+  border-color: #b3e5d218;
+}
+
+.daily-row--today:hover {
+  background: #b3e5d20d;
+}
+
+.daily-day {
+  min-width: 0;
+}
+
+.daily-day strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #edf2fc;
+}
+
+.daily-row--today .daily-day strong {
+  color: var(--mint);
+}
+
+.daily-day time {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.daily-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daily-icon .weather-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.daily-condition {
+  min-width: 0;
+}
+
+.daily-condition > span:first-child {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rain-chance {
+  display: block;
+  margin-top: 5px;
+
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.daily-range {
+  display: grid;
+  grid-template-columns:
+    36px
+    minmax(70px, 1fr)
+    36px;
+
+  align-items: center;
+  gap: 9px;
+
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-range > span {
+  color: var(--muted);
+  text-align: right;
+}
+
+.daily-range > strong {
+  color: #edf2fc;
+  font-weight: 600;
+}
+
+.range-track {
+  position: relative;
+  height: 5px;
+
+  border-radius: 999px;
+  overflow: hidden;
+
+  background: #ffffff0b;
+}
+
+.range-track > div {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+
+  min-width: 10px;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    #8495aa,
+    var(--mint)
+  );
+}
+
+.panel-note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+
+/* =========================================
+   PHASE 2.3 — TEMPERATURE CHART
+   ========================================= */
+
+.chart-panel {
+  overflow: hidden;
+}
+
+.chart-summary {
+  margin: 16px 0 4px;
+
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.chart-summary strong {
+  color: #edf2fc;
+  font-weight: 600;
+}
+
+.temperature-chart-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.temperature-chart--daily {
+  display: block;
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+}
+
+.temperature-chart--daily text {
+  font-family: inherit;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  margin-top: 10px;
+
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.chart-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.chart-legend-dot {
+  display: inline-block;
+
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+}
+
+.chart-legend-dot--max {
+  background: var(--mint);
+}
+
+.chart-legend-dot--min {
+  background: #9aa9bd;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 900px) {
+  .daily-row {
+    grid-template-columns:
+      90px
+      44px
+      minmax(100px, 1fr)
+      minmax(140px, 1.4fr);
+
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .daily-row {
+    grid-template-columns:
+      76px
+      38px
+      minmax(105px, 1fr);
+
+    gap: 10px;
+
+    padding: 13px 6px;
+  }
+
+  .daily-icon .weather-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .daily-range {
+    grid-column: 1 / -1;
+
+    grid-template-columns:
+      34px
+      minmax(80px, 1fr)
+      34px;
+
+    padding-left: 76px;
+  }
+
+  .temperature-chart--daily {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 380px) {
+  .daily-row {
+    grid-template-columns:
+      68px
+      34px
+      minmax(90px, 1fr);
+
+    gap: 8px;
+  }
+
+  .daily-range {
+    padding-left: 68px;
+  }
+
+  .daily-condition > span:first-child {
+    font-size: 11px;
+  }
+
+  .rain-chance {
+    font-size: 9px;
+  }
+}
+
+
+/* =========================================
+   REDUCED MOTION
+   ========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-row {
+    transition: none;
+  }
+}
