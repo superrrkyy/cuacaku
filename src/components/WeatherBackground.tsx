@@ -28,7 +28,7 @@ export default function WeatherBackground({
   }, [timezone, isDay]);
 
   const visual = weatherVisualState(code, isDay);
-  const atmosphereClass = `${visual} atmosphere--${dayPart}`;
+  const atmosphereClass = `atmosphere--${visual} atmosphere--${dayPart}`;
 
   return (
     <div aria-hidden="true" className={`atmosphere ${atmosphereClass}`}>
