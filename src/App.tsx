@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Search from "./components/Search";
-import { type Place } from "./weather";
+import { weatherVisualState, type Place } from "./weather";
 import WeatherBackground from "./components/WeatherBackground";
 import WeatherHero from "./components/WeatherHero";
 import HourlyForecast from "./components/HourlyForecast";
@@ -110,7 +110,9 @@ export default function App() {
   const c = data?.current;
   return (
     <div className="app-shell">
-      <WeatherBackground code={c?.code} isDay={c?.isDay} />
+      <WeatherBackground
+        state={c ? weatherVisualState(c.code, c.isDay) : "clear-night"}
+      />
       <a className="skip-link" href="#weather-content">
         Lewati ke cuaca
       </a>

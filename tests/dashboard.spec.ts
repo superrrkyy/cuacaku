@@ -279,11 +279,12 @@ for (const [code, day, state] of [
   [0, 1, "clear-day"],
   [0, 0, "clear-night"],
   [3, 0, "cloudy"],
+  [61, 1, "rain"],
   [95, 1, "storm"],
   [71, 1, "snow"],
   [45, 1, "fog"],
 ] as const) {
-  test(`weather atmosphere ${state}`, async ({ page }) => {
+  test(`weather atmosphere ${state} (WMO ${code})`, async ({ page }) => {
     await mockWeather(page, code, day);
     await page.goto("./");
     await expect(page.locator(`.atmosphere--${state}`)).toHaveCount(1);
@@ -291,5 +292,106 @@ for (const [code, day, state] of [
       "aria-label",
       new RegExp(day ? "siang" : "malam"),
     );
+    await page.clock.runFor(500);
+    // CSS animations use the document timeline, not Playwright's mocked JS clock.
+    await page
+      .locator("main")
+      .evaluate((el) =>
+        Promise.all(el.getAnimations().map((animation) => animation.finished)),
+      );
+    const heroBox = await page.locator(".hero").boundingBox();
+    const iconBox = await page.locator(".hero-symbol").boundingBox();
+    await page.clock.runFor(2000);
+    expect(await page.locator(".hero").boundingBox()).toEqual(heroBox);
+    expect(await page.locator(".hero-symbol").boundingBox()).toEqual(iconBox);
+    await noPageOverflow(page);
+    const background = await page
+      .locator(".atmosphere")
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(background).toContain("gradient");
+    const accessibility = await new AxeBuilder({ page })
+      .include(".hero")
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    for (const pseudo of ["::before", "::after"]) {
+      const css = await page.locator(".atmosphere").evaluate((el, pseudo) => {
+        const css = getComputedStyle(el, pseudo);
+        return { animation: css.animationName, transform: css.transform };
+      }, pseudo);
+      expect(css).toEqual({ animation: "none", transform: "none" });
+    }
+    expect(
+      await page
+        .locator(".atmosphere")
+        .evaluate((el) => getComputedStyle(el).backgroundImage),
+    ).toBe(background);
+    await expect(page.locator(".temperature")).toHaveAttribute(
+      "aria-label",
+      "31 derajat Celsius",
+    );
+    await expect(page.locator(".condition")).toHaveText(/.+/);
+  });
+}
+
+for (const width of [320, 375, 390, 768, 1024, 1280, 1440]) {
+  test(`hero contains long locations and negative temperatures at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await mockWeather(page);
+    await page.addInitScript(() =>
+      localStorage.setItem(
+        "cuacaku_place",
+        JSON.stringify({
+          id: 1,
+          name: "KotaDenganNamaSangatPanjangTanpaSpasi",
+          admin1: "Wilayah administratif dengan nama yang panjang",
+          country: "Indonesia",
+          latitude: 0,
+          longitude: 0,
+        }),
+      ),
+    );
+    const cold = weather(96, 0);
+    cold.current.temperature_2m = -35;
+    cold.current.apparent_temperature = -42;
+    await page.route("https://api.open-meteo.com/**", (route) =>
+      route.fulfill({ json: cold }),
+    );
+    await page.goto("./");
+    await expect(page.locator(".hero")).toBeVisible();
+    await page.clock.runFor(500);
+    await noPageOverflow(page);
+    expect(
+      await page
+        .locator(".hero")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true);
+    expect(
+      await page
+        .locator(".temperature")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true);
+    const hero = await page.locator(".hero").boundingBox();
+    for (const selector of [
+      ".temperature",
+      ".hero-symbol",
+      ".hero-region",
+      ".high-low",
+    ]) {
+      const box = await page.locator(selector).boundingBox();
+      expect(box!.x).toBeGreaterThanOrEqual(hero!.x);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(hero!.x + hero!.width);
+    }
+    const favorite = page.getByRole("button", { name: "Tambah ke favorit" });
+    await favorite.focus();
+    expect(
+      await favorite.evaluate((el) => ({
+        style: getComputedStyle(el).outlineStyle,
+        width: getComputedStyle(el).outlineWidth,
+      })),
+    ).toEqual({ style: "solid", width: "2px" });
   });
 }

@@ -1,15 +1,15 @@
-import { weatherVisualState } from "../weather";
-export default function WeatherBackground({
-  code = 0,
-  isDay = false,
+import { memo } from "react";
+import type { WeatherVisualState } from "../weather";
+
+/** Decorative, CSS-only atmosphere. Normalize API weather in the caller. */
+const WeatherBackground = memo(function WeatherBackground({
+  state,
 }: {
-  code?: number;
-  isDay?: boolean;
+  state: WeatherVisualState;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className={`atmosphere atmosphere--${weatherVisualState(code, isDay)}`}
-    />
+    <div aria-hidden="true" className={`atmosphere atmosphere--${state}`} />
   );
-}
+});
+
+export default WeatherBackground;
