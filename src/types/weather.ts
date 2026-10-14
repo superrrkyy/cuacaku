@@ -20,6 +20,8 @@ export interface Weather {
     code: number;
     isDay: boolean;
     precipitation: number;
+    /** Visibility from the current forecast hour, in metres. */
+    visibility?: number | null;
   };
   hourly: { time: string; temp: number; code: number; rain: number; isDay: boolean }[];
   daily: {
