@@ -44,3 +44,19 @@ export function longDate(iso: string, timezone = "UTC") {
   const d = new Date(`${local.slice(0, 10)}T00:00:00Z`);
   return `${HARI[d.getUTCDay()]}, ${d.getUTCDate()} ${BULAN[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
+
+export function shortDate(iso: string, timezone = "UTC") {
+  const local = localParts(iso, timezone);
+  return local ? `${Number(local.slice(8, 10))} ${BULAN[Number(local.slice(5, 7)) - 1]}` : "—";
+}
+
+/** Compare calendar carriers in the location's timezone, never the browser's timezone. */
+export function sunProgress(sunrise: string, sunset: string, timezone: string, now = new Date()): number | null {
+  if (!Number.isFinite(now.getTime())) return null;
+  const rise = localParts(sunrise, timezone), set = localParts(sunset, timezone);
+  const current = localParts(now.toISOString(), timezone);
+  if (!isLocalTime(rise) || !isLocalTime(set) || !isLocalTime(current) || rise.slice(0, 10) !== current.slice(0, 10)) return null;
+  const start = Date.parse(`${rise}Z`), end = Date.parse(`${set}Z`), value = Date.parse(`${current}Z`);
+  if (end <= start) return null;
+  return Math.max(0, Math.min(1, (value - start) / (end - start)));
+}

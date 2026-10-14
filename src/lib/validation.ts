@@ -22,7 +22,7 @@ type CurrentNumbers = "temperature_2m" | "apparent_temperature" | "relative_humi
 interface RawWeather {
   timezone: string;
   current: { time: string } & Record<CurrentNumbers, number>;
-  hourly: { time: string[]; temperature_2m: number[]; weather_code: number[]; precipitation_probability: (number | null)[]; is_day: number[] };
+  hourly: { visibility?: (number | null)[]; time: string[]; temperature_2m: number[]; weather_code: number[]; precipitation_probability: (number | null)[]; is_day: number[] };
   daily: { time: string[]; weather_code: number[]; temperature_2m_max: number[]; temperature_2m_min: number[]; precipitation_probability_max: (number | null)[]; sunrise: string[]; sunset: string[]; uv_index_max: (number | null)[] };
 }
 function array<T>(v: unknown, length: number, check: (item: unknown) => item is T): v is T[] {
@@ -37,6 +37,7 @@ function isWeather(v: unknown): v is RawWeather {
   if (!Array.isArray(h.time) || !h.time.length || !h.time.every(isLocalTime) ||
       !Array.isArray(d.time) || !d.time.length || !d.time.every(isLocalDate)) return false;
   const hn = h.time.length, dn = d.time.length;
+  if (h.visibility !== undefined && !array(h.visibility, hn, (v): v is number | null => v === null || nonnegative(v))) return false;
   if (!array(h.temperature_2m, hn, finite) || !array(h.weather_code, hn, code) || !array(h.precipitation_probability, hn, nullablePercent) || !array(h.is_day, hn, flag) ||
       !array(d.weather_code, dn, code) || !array(d.temperature_2m_max, dn, finite) || !array(d.temperature_2m_min, dn, finite) ||
       !array(d.precipitation_probability_max, dn, nullablePercent) || !array(d.sunrise, dn, isLocalTime) || !array(d.sunset, dn, isLocalTime) || !array(d.uv_index_max, dn, nullableUV)) return false;

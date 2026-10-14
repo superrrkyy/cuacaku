@@ -103,3 +103,20 @@ describe("search interactions", () => {
     expect(search.mock.calls[0][1]?.signal?.aborted).toBe(true); expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+it("clear button aborts pending results, resets input and restores focus", async () => {
+  const pending = deferred<Place[]>(); search.mockReturnValue(pending.promise);
+  const input = await mount(); await type(input, "Jakarta"); await tick(400);
+  await click(view.container.querySelector('[aria-label="Hapus pencarian"]'));
+  expect(input.value).toBe(""); expect(document.activeElement).toBe(input);
+  expect(search.mock.calls[0][1]?.signal?.aborted).toBe(true);
+  await act(async () => pending.resolve([jakarta]));
+  expect(input.getAttribute("aria-expanded")).toBe("false");
+  expect(input.getAttribute("aria-busy")).toBe("false");
+});
+it("cycles through options and selects the highlighted last option with Enter", async () => {
+  search.mockResolvedValue([jakarta, bandung]);
+  const input = await mount(); await type(input, "Ja"); await tick(400);
+  await key(input, "ArrowUp"); await key(input, "Enter");
+  expect(onSelect).toHaveBeenCalledWith(bandung);
+});

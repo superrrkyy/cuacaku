@@ -39,8 +39,8 @@ describe("App regression protection", () => {
     await view.render(<App />);
     const text = view.container.textContent;
     for (const part of ["Jakarta", "31°", "Hujan Ringan", "24 JAM KE DEPAN", "PRAKIRAAN 7 HARI", "12 km/j", "Arah T", "Tinggi", "05:30", "17:45", "Rabu, 14 Okt 2026"]) expect(text).toContain(part);
-    expect(view.container.querySelector(".bg-gradient-to-b")?.className).toContain("from-slate-600");
-    expect(text).toContain("🌦️"); expect(button("Muat ulang cuaca")?.hasAttribute("disabled")).toBe(false);
+    expect(view.container.querySelector(".atmosphere--rain")).not.toBeNull();
+    expect(view.container.querySelector('[role="img"][aria-label="Hujan Ringan, siang"]')).not.toBeNull(); expect(button("Muat ulang cuaca")?.hasAttribute("disabled")).toBe(false);
   });
   it("refresh loading disables button, clears old data and exposes retry on failure", async () => {
     await view.render(<App />);
@@ -79,7 +79,7 @@ describe("App regression protection", () => {
     await click(button("Tambah ke favorit"));
     expect(JSON.parse(localStorage.getItem("cuacaku_favs")!)).toHaveLength(1);
     await selectBandung();
-    await click(Array.from(view.container.querySelectorAll("button")).find(b => b.textContent?.trim() === "⭐ Jakarta") ?? null);
+    await click(button("Lihat cuaca Jakarta"));
     expect(view.container.querySelector("h2")?.textContent).toContain("Jakarta");
     await click(button("Hapus dari favorit")); expect(JSON.parse(localStorage.getItem("cuacaku_favs")!)).toEqual([]);
   });
@@ -150,4 +150,39 @@ describe("App regression protection", () => {
     expect(remove).toHaveBeenCalledWith("online", expect.any(Function)); expect(remove).toHaveBeenCalledWith("offline", expect.any(Function));
     await act(async () => pending.resolve(weather));
   });
+});
+
+it("favorite cards show weather, support individual removal and confirmed clear-all", async () => {
+  await view.render(<App />); await click(button("Tambah ke favorit"));
+  expect(button("Lihat cuaca Jakarta")?.textContent).toContain("31°");
+  expect(button("Lihat cuaca Jakarta")?.textContent).toContain("Hujan Ringan");
+  await selectBandung(); await click(button("Tambah ke favorit"));
+  await click(button("Hapus Jakarta dari favorit"));
+  expect(JSON.parse(localStorage.getItem("cuacaku_favs")!)).toHaveLength(1);
+  const byText = (text: string) => Array.from(view.container.querySelectorAll("button")).find(b => b.textContent === text) ?? null;
+  await click(byText("Bersihkan favorit")); await click(byText("Batal"));
+  expect(JSON.parse(localStorage.getItem("cuacaku_favs")!)).toHaveLength(1);
+  await click(byText("Bersihkan favorit")); await click(byText("Ya, hapus"));
+  expect(JSON.parse(localStorage.getItem("cuacaku_favs")!)).toEqual([]);
+  expect(view.container.textContent).toContain("Simpan kota favorit");
+});
+it("loads a saved favorite's weather through the existing API and aborts on unmount", async () => {
+  localStorage.setItem("cuacaku_favs", JSON.stringify([bandung]));
+  const pending = deferred<Weather>();
+  get.mockImplementation((lat) => lat === bandung.latitude ? pending.promise : Promise.resolve(weather));
+  await view.render(<App />);
+  const request = get.mock.calls.find(call => call[0] === bandung.latitude);
+  expect(request).toBeDefined();
+  expect(button("Lihat cuaca Bandung")?.textContent).toContain("Memuat cuaca");
+  await view.unmount(); expect(request?.[2]?.signal?.aborted).toBe(true);
+  await act(async () => pending.resolve(weather));
+});
+it("a failed selected favorite does not remain labeled as loading", async () => {
+  await view.render(<App />); await click(button("Tambah ke favorit"));
+  get.mockRejectedValueOnce(new ApiError("TIMEOUT"));
+  await click(button("Muat ulang cuaca"));
+  expect(button("Lihat cuaca Jakarta")?.textContent).toContain("Gagal memuat");
+  expect(button("Lihat cuaca Jakarta")?.textContent).not.toContain("Memuat cuaca");
+  await click(button("Lihat cuaca Jakarta"));
+  expect(view.container.querySelector("main")).not.toBeNull();
 });

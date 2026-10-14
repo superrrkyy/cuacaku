@@ -173,3 +173,18 @@ Dibuat dengan 💜 oleh [**AXRYZURE**](https://github.com/superrrkyy) • 🇮�
 ⭐ Beri bintang jika bermanfaat!
 
 </div>
+
+## Phase 2 — Premium weather experience
+
+Dashboard kini memakai hero cuaca, atmosfer adaptif, timeline 24 jam, prakiraan
+7 hari dengan rentang suhu, grafik SVG, detail cuaca, indeks UV dan siklus
+matahari berbasis timezone lokasi. Pencarian keyboard, geolokasi, favorit lokal,
+error handling dan refresh Phase 1 tetap tersedia.
+
+Lihat [catatan implementasi dan validasi Phase 2](PHASE2.md) untuk struktur
+komponen, batasan data, hasil pemeriksaan dan langkah menjalankan browser checks:
+
+```bash
+npx playwright install --with-deps chromium
+npm run test:browser
+```

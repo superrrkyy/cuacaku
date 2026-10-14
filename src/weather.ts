@@ -29,7 +29,7 @@ export async function getWeather(lat: number, lon: number, options: RequestOptio
     longitude: String(lon),
     current:
       "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code,is_day,precipitation",
-    hourly: "temperature_2m,weather_code,precipitation_probability,is_day",
+    hourly: "temperature_2m,weather_code,precipitation_probability,is_day,visibility",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max",
     timezone: "auto",
     forecast_days: "7",
@@ -57,6 +57,7 @@ export async function getWeather(lat: number, lon: number, options: RequestOptio
       code: d.current.weather_code,
       isDay: d.current.is_day === 1,
       precipitation: d.current.precipitation,
+      visibility: d.hourly.visibility?.[startIdx] ?? null,
     },
     hourly: d.hourly.time.slice(startIdx, startIdx + 24).map((t: string, i: number) => ({
       time: t,
@@ -141,4 +142,18 @@ export function windDir(deg: number) {
 }
 export function uvLabel(uv: number) {
   return uv < 3 ? "Rendah" : uv < 6 ? "Sedang" : uv < 8 ? "Tinggi" : uv < 11 ? "Sangat Tinggi" : "Ekstrem";
+}
+
+export type WeatherVisualState = "clear-day" | "clear-night" | "cloudy" | "rain" | "storm" | "snow" | "fog";
+/** One WMO source of truth for icons and atmosphere. */
+export function weatherVisualState(code: number, isDay = true): WeatherVisualState {
+  const group = info(code).group;
+  return group === "clear" ? (isDay ? "clear-day" : "clear-night") : group === "cloud" ? "cloudy" : group;
+}
+
+export function temperatureRange(min: number, max: number, low: number, high: number) {
+  if (high <= low) return { left: 0, width: 100 };
+  const clamp = (v: number) => Math.max(0, Math.min(100, v));
+  const left = clamp((min - low) / (high - low) * 100);
+  return { left, width: Math.max(0, clamp((max - low) / (high - low) * 100) - left) };
 }

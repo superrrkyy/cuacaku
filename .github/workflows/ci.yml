@@ -42,8 +42,14 @@ jobs:
       - name: Regression timezone perangkat
         run: |
           for zone in UTC Asia/Jakarta Asia/Tokyo Europe/London America/New_York; do
-            TZ="$zone" npx vitest run src/__tests__/dates.test.ts src/__tests__/weather.test.ts || exit 1
+            TZ="$zone" npx vitest run src/__tests__/dates.test.ts src/__tests__/weather.test.ts src/__tests__/visuals.test.ts || exit 1
           done
 
       - name: Build produksi
         run: npm run build
+
+      - name: Pasang Chromium untuk browser checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Responsive, accessibility, dan interaction checks
+        run: npm run test:browser
