@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dayName, hour, longDate } from "../weather";
-import { isLocalDate, isLocalTime } from "../lib/dates";
+import { addDays, isLocalDate, isLocalTime, localDate, weekdayName, weekdayShort } from "../lib/dates";
 
 describe.each(["Asia/Jakarta", "Asia/Tokyo", "Europe/London", "America/New_York"])("location wall time: %s", timezone => {
   it("preserves current, hourly, sunrise and sunset local times", () => {
@@ -31,4 +31,36 @@ it("validates calendar and timestamps", () => {
   expect(isLocalTime("2026-10-14T23:59:60")).toBe(false);
   expect(isLocalTime("2026-10-14T07:30:15")).toBe(true);
   expect(hour("bad")).toBe("—"); expect(longDate("bad")).toBe("—");
+});
+
+describe("weekly forecast labels", () => {
+  it("resolves the location calendar date, weekday and day shifts", () => {
+    expect(localDate("2026-10-14T23:59", "Asia/Jakarta")).toBe("2026-10-14");
+    expect(localDate("2026-10-14T23:00:00Z", "Asia/Tokyo")).toBe("2026-10-15");
+    expect(weekdayName("2026-10-14", "Asia/Jakarta")).toBe("Rabu");
+    expect(weekdayShort("2026-10-14", "Europe/London")).toBe("Rab");
+    expect(addDays("2026-10-31", 1)).toBe("2026-11-01");
+    expect(addDays("2024-02-28", 1)).toBe("2024-02-29");
+    expect(addDays("2026-02-28", 1)).toBe("2026-03-01");
+    expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
+  });
+  it.each([
+    ["Asia/Jakarta", "Kamis"],
+    ["Asia/Tokyo", "Kamis"],
+    ["Europe/London", "Kamis"], // 23:30Z is already 00:30 on 15 Oct in London (BST)
+    ["America/New_York", "Rabu"], // ...and still 19:30 on 14 Oct in New York
+  ])("resolves the weekday of one instant in %s", (zone, day) =>
+    expect(weekdayName("2026-10-14T23:30:00Z", zone)).toBe(day));
+  it.each([["bad", "Asia/Jakarta"], ["2026-10-14", "Not/AZone"], ["2026-10-14T25:00", "Asia/Jakarta"]])(
+    "has an empty fallback for %s in %s",
+    (value, zone) => {
+      expect(localDate(value, zone)).toBe("");
+      expect(weekdayName(value, zone)).toBe("—");
+      expect(weekdayShort(value, zone)).toBe("—");
+    },
+  );
+  it.each([["2026-02-30", 1], ["2026-10-14", 1.5], ["2026-10-14", NaN]])(
+    "rejects an invalid day shift %s + %s",
+    (date, days) => expect(addDays(date, days)).toBe(""),
+  );
 });
