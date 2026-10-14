@@ -18,7 +18,7 @@ export default function DailyForecast({ data }: { data: Weather }) {
       <div className="section-heading">
         <div>
           <p className="eyebrow">Sepekan di depan</p>
-          <h3 id="daily-title">Prakiraan 7 Hari</h3>
+          <h3 id="daily-title">PRAKIRAAN 7 HARI</h3>
         </div>
 
         <span className="small-tag">°C</span>
@@ -70,9 +70,9 @@ export default function DailyForecast({ data }: { data: Weather }) {
 
               <div
                 className="daily-range"
-                aria-label={`Suhu minimum ${Math.round(
-                  day.min,
-                )} derajat, maksimum ${Math.round(day.max)} derajat`}
+                aria-label={`Minimum ${Math.round(day.min)}°, maksimum ${Math.round(
+                day.max,
+                )}°`}
               >
                 <span>{Math.round(day.min)}°</span>
 
