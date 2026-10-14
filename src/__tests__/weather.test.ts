@@ -2,8 +2,9 @@
  * Unit test untuk modul cuaca CuacaKu (Open-Meteo).
  * fetch selalu di-mock; tidak ada permintaan jaringan sungguhan.
  *
- * Asumsi: timezone mesin uji = UTC (default runner GitHub Actions).
+ * Format tanggal tidak bergantung pada timezone mesin uji.
  */
+import { fixture, iso } from "./fixtures";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   dayName,
@@ -21,7 +22,7 @@ import {
 const okJson = (data: unknown) =>
   ({ ok: true, status: 200, json: async () => data }) as unknown as Response;
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("pemetaan kode cuaca WMO", () => {
   it("info() mengenali kode yang diketahui", () => {
@@ -104,49 +105,11 @@ describe("searchPlaces()", () => {
 
   it("melempar error bila layanan gagal", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 500 }) as unknown as Response));
-    await expect(searchPlaces("Jakarta")).rejects.toThrow("Gagal mencari kota");
+    await expect(searchPlaces("Jakarta")).rejects.toMatchObject({ code: "HTTP_ERROR", status: 500 });
   });
 });
 
 describe("getWeather()", () => {
-  const iso = (h: number) => `2026-10-13T${String(h).padStart(2, "0")}:00`;
-
-  const fixture = {
-    timezone: "Asia/Jakarta",
-    current: {
-      time: iso(7),
-      temperature_2m: 31.5,
-      apparent_temperature: 34,
-      relative_humidity_2m: 70,
-      wind_speed_10m: 12,
-      wind_direction_10m: 90,
-      surface_pressure: 1008,
-      weather_code: 61,
-      is_day: 1,
-      precipitation: 0.4,
-    },
-    hourly: {
-      // 31 jam mulai 06:00 pada 13 Okt → jam 07:00 ada di indeks 1
-      time: Array.from({ length: 31 }, (_, i) =>
-        new Date(Date.UTC(2026, 9, 13, 6 + i)).toISOString().slice(0, 16),
-      ),
-      temperature_2m: Array.from({ length: 31 }, (_, i) => 24 + i),
-      weather_code: Array.from({ length: 31 }, () => 3),
-      precipitation_probability: Array.from({ length: 31 }, (_, i) => i),
-      is_day: Array.from({ length: 31 }, () => 1),
-    },
-    daily: {
-      time: ["2026-10-13", "2026-10-14"],
-      weather_code: [61, 0],
-      temperature_2m_max: [32, 33],
-      temperature_2m_min: [25, 26],
-      precipitation_probability_max: [80, null],
-      sunrise: ["2026-10-13T05:30", "2026-10-14T05:30"],
-      sunset: ["2026-10-13T17:45", "2026-10-14T17:45"],
-      uv_index_max: [7.5, null],
-    },
-  };
-
   it("memetakan respons API ke bentuk internal", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => okJson(fixture)));
 
@@ -157,7 +120,7 @@ describe("getWeather()", () => {
     expect(w.current.isDay).toBe(true);
     expect(w.current.code).toBe(61);
 
-    // 24 jam ke depan, dimulai dari jam saat ini (indeks 24 karena fixture)
+    // 24 jam ke depan, dimulai dari jam saat ini (indeks 1 dalam fixture)
     expect(w.hourly).toHaveLength(24);
     expect(w.hourly[0].time).toBe(iso(7));
 
@@ -180,6 +143,6 @@ describe("getWeather()", () => {
 
   it("melempar error bila layanan cuaca gagal", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503 }) as unknown as Response));
-    await expect(getWeather(0, 0)).rejects.toThrow("Gagal memuat cuaca");
+    await expect(getWeather(0, 0)).rejects.toMatchObject({ code: "HTTP_ERROR", status: 503 });
   });
 });
