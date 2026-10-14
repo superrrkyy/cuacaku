@@ -102,8 +102,8 @@ it("offers a 7-day chart summary and every exact daily value in a readable data 
   });
 
   expect(
-    view.container.querySelector("table")?.textContent,
-  ).toContain("2026-10-13");
+  view.container.querySelector("table")?.textContent,
+).toContain("Hari ini");
 
   expect(
     view.container.querySelector("table")?.textContent,
