@@ -150,9 +150,9 @@ it("hero exposes location, feels-like, high/low, weather meaning and favorite ac
   expect(onFavorite).toHaveBeenCalledOnce();
 });
 it("switches clear day/night atmosphere without adding particle nodes", async () => {
-  await view.render(<WeatherBackground code={0} isDay />);
+  await view.render(<WeatherBackground state="clear-day" />);
   expect(view.container.querySelector(".atmosphere--clear-day")).not.toBeNull();
-  await view.render(<WeatherBackground code={0} isDay={false} />);
+  await view.render(<WeatherBackground state="clear-night" />);
   expect(
     view.container.querySelector(".atmosphere--clear-night"),
   ).not.toBeNull();

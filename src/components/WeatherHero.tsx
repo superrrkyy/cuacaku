@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
   hour,
   info,
@@ -18,17 +19,18 @@ export default function WeatherHero({
   favorite: boolean;
   onFavorite: () => void;
 }) {
+  const titleId = useId();
   const c = data.current,
     today = data.daily[0];
   return (
-    <section className="glass hero" aria-labelledby="location-title">
+    <section className="glass hero" aria-labelledby={titleId}>
       <div className="hero-top">
         <div>
           <p className="eyebrow">
-            <span className="live-dot" /> CUACA SAAT INI
+            <span className="live-dot" aria-hidden="true" /> CUACA SAAT INI
           </p>
-          <h2 id="location-title">{place.name}</h2>
-          <p className="muted">
+          <h2 id={titleId}>{place.name}</h2>
+          <p className="muted hero-region">
             {[place.admin1, place.country].filter(Boolean).join(", ") ||
               "Lokasi saat ini"}
           </p>
@@ -44,13 +46,14 @@ export default function WeatherHero({
         </button>
       </div>
       <div className="hero-weather">
-        <div>
+        <div className="hero-reading">
           <p
             className="temperature"
             aria-label={`${Math.round(c.temperature)} derajat Celsius`}
           >
             {Math.round(c.temperature)}
             <span>°</span>
+            <small aria-hidden="true">C</small>
           </p>
           <p className="condition">{info(c.code).label}</p>
           <p className="muted feels-like">
@@ -59,18 +62,28 @@ export default function WeatherHero({
         </div>
         <div className="hero-symbol">
           <WeatherIcon code={c.code} isDay={c.isDay} />
-          <p className="high-low">
-            <span
-              aria-label={`Suhu tertinggi ${Math.round(today.max)} derajat`}
-            >
-              ↑ {Math.round(today.max)}°
-            </span>
-            <span aria-label={`Suhu terendah ${Math.round(today.min)} derajat`}>
-              ↓ {Math.round(today.min)}°
-            </span>
-          </p>
         </div>
       </div>
+      <dl className="high-low" aria-label="Rentang suhu hari ini">
+        <div>
+          <dt>Tertinggi hari ini</dt>
+          <dd
+            aria-label={`Suhu tertinggi ${Math.round(today.max)} derajat Celsius`}
+          >
+            <span aria-hidden="true">↑ </span>
+            {Math.round(today.max)}°
+          </dd>
+        </div>
+        <div>
+          <dt>Terendah hari ini</dt>
+          <dd
+            aria-label={`Suhu terendah ${Math.round(today.min)} derajat Celsius`}
+          >
+            <span aria-hidden="true">↓ </span>
+            {Math.round(today.min)}°
+          </dd>
+        </div>
+      </dl>
       <dl className="hero-metrics">
         {[
           ["Presipitasi", `${c.precipitation} mm`],

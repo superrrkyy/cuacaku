@@ -80,29 +80,36 @@ p {
   margin: auto;
   padding: 0 32px;
 }
+/* One fixed paint surface and two pseudo-elements; never a DOM particle list. */
 .atmosphere {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(ellipse at 85% 9%, #32396755, transparent 57%),
-    linear-gradient(145deg, #111b32, #080e1c 75%);
+  overflow: hidden;
+  contain: strict;
+  background: linear-gradient(145deg, #152139, #080e1c 80%);
 }
 .atmosphere::before,
 .atmosphere::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -32px;
   opacity: 0.3;
 }
 .atmosphere--clear-day {
   background:
-    radial-gradient(ellipse at 78% 10%, #66604744, transparent 45%),
-    radial-gradient(ellipse at 0 40%, #24465b44, transparent 60%), #0b1425;
+    radial-gradient(ellipse at 85% 0, #514c3844, transparent 55%),
+    linear-gradient(145deg, #172c40, #0b1425 80%);
 }
 .atmosphere--clear-day::before {
-  background: radial-gradient(circle at 80% 18%, #e7cc7e12, transparent 25%);
+  background: radial-gradient(ellipse at 80% 18%, #f2d89355, transparent 45%);
+  animation: ambient-breathe 18s ease-in-out infinite alternate;
+}
+.atmosphere--clear-night {
+  background:
+    radial-gradient(ellipse at 80% 0, #35366966, transparent 60%),
+    linear-gradient(145deg, #141b35, #080e1c 80%);
 }
 .atmosphere--clear-night::before {
   background-image:
@@ -112,9 +119,18 @@ p {
     radial-gradient(1px 1px at 85% 42%, #c3d2ef 90%, transparent);
   background-size: 540px 450px;
 }
+.atmosphere--clear-night::after {
+  background: radial-gradient(ellipse at 80% 12%, #9fa7ee22, transparent 40%);
+}
+.atmosphere--cloudy {
+  background: linear-gradient(145deg, #263249, #0c1427 80%);
+}
 .atmosphere--cloudy::before,
 .atmosphere--storm::before {
-  background: radial-gradient(ellipse at 20% 0, #63718d44, transparent 65%);
+  background:
+    radial-gradient(ellipse at 20% 0, #8d9bb755, transparent 60%),
+    radial-gradient(ellipse at 90% 35%, #63718d33, transparent 50%);
+  animation: atmosphere-drift 24s ease-in-out infinite alternate;
 }
 .atmosphere--rain {
   background:
@@ -122,45 +138,84 @@ p {
     linear-gradient(135deg, #0f1b2e, #080e1c 80%);
 }
 .atmosphere--rain::after {
-  inset: -60px 0 0;
-  background-image: repeating-linear-gradient(
-    100deg,
-    transparent 0 109px,
-    #a3bddc15 110px,
-    transparent 111px 220px
-  );
-  mask-image: linear-gradient(#0008, transparent 75%);
-  animation: rain-drift 8s linear infinite;
-  opacity: 0.3;
+  inset: -230px 0 0;
+  background-image:
+    radial-gradient(1px 9px at 30% 25%, #a3bddc66 70%, transparent),
+    radial-gradient(1px 7px at 78% 65%, #a3bddc44 70%, transparent);
+  background-size: 180px 230px;
+  animation: rain-drift 7s linear infinite;
 }
 .atmosphere--storm {
   background:
-    radial-gradient(ellipse at 60% 0, #39365370, transparent 65%), #0a1020;
+    radial-gradient(ellipse at 60% 0, #51446e55, transparent 65%),
+    linear-gradient(145deg, #1c2038, #0a1020 80%);
+}
+.atmosphere--storm::after {
+  background: radial-gradient(ellipse at 70% 5%, #b8b9f166, transparent 55%);
+  opacity: 0;
+  /* A slow, low-opacity glow, not a strobe or a full-screen flash. */
+  animation: storm-glow 24s ease-in-out infinite;
+}
+.atmosphere--snow {
+  background: linear-gradient(145deg, #26394b, #101c30 60%, #0b1425);
 }
 .atmosphere--snow::after {
-  background:
-    radial-gradient(2px 2px at 30% 25%, #d8e7ff55 90%, transparent),
-    radial-gradient(1px 1px at 78% 9%, #d8e7ff66 90%, transparent);
+  inset: -320px -32px 0;
+  background-image:
+    radial-gradient(2px 2px at 30% 25%, #d8e7ffbb 70%, transparent),
+    radial-gradient(1px 1px at 78% 9%, #d8e7ffaa 70%, transparent);
   background-size: 240px 320px;
+  animation: snow-drift 22s linear infinite;
 }
-.atmosphere--fog::before {
+.atmosphere--fog {
+  background: linear-gradient(155deg, #2d3a49, #172333 55%, #0d1627);
+}
+.atmosphere--fog::before,
+.atmosphere--fog::after {
   background: repeating-linear-gradient(
     175deg,
     transparent 0 140px,
-    #abbccc14 180px,
+    #abbccc22 180px,
     transparent 260px
   );
-  animation: fog-drift 16s ease-in-out infinite alternate;
+  animation: atmosphere-drift 28s ease-in-out infinite alternate;
+}
+.atmosphere--fog::after {
+  background-position: 0 120px;
+  animation-duration: 36s;
+  animation-direction: alternate-reverse;
+}
+@keyframes ambient-breathe {
+  to {
+    opacity: 0.5;
+    transform: scale(1.04);
+  }
 }
 @keyframes rain-drift {
   to {
-    transform: translateY(60px);
+    transform: translateY(230px);
   }
 }
-@keyframes fog-drift {
+@keyframes snow-drift {
+  to {
+    transform: translateY(320px);
+  }
+}
+@keyframes atmosphere-drift {
   to {
     transform: translateX(24px);
-    opacity: 0.5;
+    opacity: 0.45;
+  }
+}
+@keyframes storm-glow {
+  0%,
+  78%,
+  92%,
+  100% {
+    opacity: 0;
+  }
+  85% {
+    opacity: 0.22;
   }
 }
 .glass {
@@ -459,13 +514,23 @@ p {
   min-width: 0;
 }
 .hero {
-  padding: 30px 32px 20px;
+  padding: 32px 32px 22px;
   position: relative;
+  border-color: #c7d9ff26;
   background:
-    radial-gradient(ellipse at 95% 20%, #7796b417, transparent 65%),
-    linear-gradient(135deg, #243750aa, #17213888);
+    radial-gradient(ellipse at 100% 0, #7375ce1c, transparent 60%),
+    linear-gradient(135deg, #243750cc, #141e35e6);
+  box-shadow:
+    inset 0 1px 0 #e1edff09,
+    0 18px 60px #02071326;
   display: flex;
   flex-direction: column;
+}
+.hero-top > div {
+  min-width: 0;
+}
+.hero-region {
+  overflow-wrap: anywhere;
 }
 .hero-top {
   display: flex;
@@ -473,7 +538,7 @@ p {
   gap: 12px;
 }
 .hero h2 {
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 550;
   letter-spacing: -1px;
   margin: 12px 0 4px;
@@ -494,6 +559,7 @@ p {
   vertical-align: middle;
 }
 .favorite-toggle {
+  flex-shrink: 0;
   align-self: start;
   font-size: 26px;
 }
@@ -506,12 +572,21 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 16px;
   flex: 1;
-  padding: 35px 0 36px;
+  flex-wrap: wrap;
+  padding: 32px 0 24px;
+}
+.hero-reading {
+  /* Let the icon wrap rather than overlap a wide negative temperature. */
+  min-width: min-content;
+  flex: 1 1 145px;
 }
 .temperature {
-  font-size: clamp(96px, 10vw, 134px);
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: clamp(96px, 10vw, 144px);
   font-weight: 300;
   letter-spacing: -8px;
   line-height: 1;
@@ -520,10 +595,20 @@ p {
 .temperature > span {
   font-weight: 250;
 }
+.temperature > small {
+  font-size: 18px;
+  letter-spacing: 0;
+  color: var(--muted);
+  vertical-align: top;
+  display: inline-block;
+  margin: 14px 0 0 5px;
+}
 .condition {
   font-size: 20px;
   font-weight: 500;
   margin-top: 12px;
+  min-height: 2.6em;
+  line-height: 1.3;
 }
 .feels-like {
   margin-top: 8px;
@@ -543,17 +628,32 @@ p {
 }
 .high-low {
   display: flex;
-  justify-content: center;
-  gap: 16px;
-  font-size: 13px;
-  margin-top: 14px;
-  color: #c6d2e2;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  margin: 0 0 24px;
+}
+.high-low > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.high-low dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+.high-low dd {
+  margin: 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.high-low dd span {
+  color: var(--mint);
 }
 .hero-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  margin: 0;
   border-top: 1px solid var(--line);
   padding: 20px 0;
 }
@@ -563,6 +663,7 @@ p {
   margin-bottom: 8px;
 }
 .hero-metrics dd {
+  margin: 0;
   font-size: 12px;
   font-weight: 500;
 }
@@ -1166,7 +1267,7 @@ p {
     font-size: 12px;
   }
   .hero-symbol .weather-icon {
-    width: 108px;
+    width: 96px;
   }
   .high-low {
     font-size: 11px;
@@ -1332,7 +1433,7 @@ p {
     font-size: 88px;
   }
   .hero-symbol .weather-icon {
-    width: 88px;
+    width: 80px;
   }
   .condition {
     font-size: 16px;
