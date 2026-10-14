@@ -1056,13 +1056,12 @@ p {
 .skip-link:focus {
   top: 10px;
 }
+/* Keep text fully opaque during the entrance motion to preserve AA contrast. */
 @keyframes reveal {
   from {
-    opacity: 0;
     transform: translateY(8px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

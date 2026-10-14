@@ -135,6 +135,41 @@ for (const width of [320, 375, 390, 768, 1024, 1280, 1440]) {
     });
   });
 }
+test("current-hour badge keeps AA contrast during dashboard reveal at 768px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 1000 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await mockWeather(page);
+  await page.goto("./");
+  const badge = page.locator(".now-marker");
+  await expect(badge).toHaveText("Kini");
+  await badge.scrollIntoViewIfNeeded();
+
+  // The mocked JS clock does not advance CSS animations. Restart and freeze the
+  // real reveal halfway through so CI speed cannot hide a transient contrast loss.
+  await page.locator("main").evaluate((el) => {
+    const main = el as HTMLElement;
+    main.style.animationName = "none";
+    void main.offsetHeight;
+    main.style.removeProperty("animation-name");
+    const reveal = main.getAnimations().find(
+      (animation) => animation instanceof CSSAnimation && animation.animationName === "reveal",
+    );
+    if (!reveal?.effect) throw new Error("Dashboard reveal animation not found");
+    reveal.pause();
+    reveal.currentTime = Number(reveal.effect.getTiming().duration) / 2;
+  });
+
+  const accessibility = await new AxeBuilder({ page })
+    .include(".now-marker")
+    .withRules(["color-contrast"])
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+  expect(accessibility.passes.some((result) => result.id === "color-contrast")).toBe(true);
+  await expect(page.locator("main")).toHaveCSS("opacity", "1");
+});
+
 test("keyboard search, favorite selection/removal/clear and persistence", async ({
   page,
 }) => {
