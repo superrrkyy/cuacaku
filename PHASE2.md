@@ -75,12 +75,14 @@ Playwright starts Vite automatically (or reuses port 5173 locally). CI also inst
 | --- | --- |
 | `npm run typecheck` | Passed |
 | `npm test` | 317 tests passed in 12 files; every pre-existing suite retained |
-| `npm run build` | Passed (187.81 kB JS / 60.76 kB gzip, 31.67 kB CSS / 7.53 kB gzip) |
-| `npm run test:browser` | Not run: no Chromium binary is available in this sandbox and browser downloads are network-restricted |
-| Timezone regression | Unit coverage for Asia/Jakarta, Asia/Tokyo, Europe/London and America/New_York; CI now also runs the new suites under all five `TZ` values |
+| `npm run build` | Passed (187.77 kB JS / 60.76 kB gzip, 31.72 kB CSS / 7.54 kB gzip) |
+| `npm run test:browser` | Passed in CI (real Chromium): no page overflow, 7 daily rows, 24 hourly cards, 44px touch targets, zero axe violations for wcag2a/2aa/wcag21aa at **320, 375, 390, 768, 1024, 1280, 1440px**, plus the new 7-day-chart checks and reduced-motion computed styles |
+| Timezone regression | Unit coverage for Asia/Jakarta, Asia/Tokyo, Europe/London and America/New_York; CI runs `dates`, `weather`, `visuals`, `DailyForecast` and `TemperatureChart` suites under all five `TZ` values (110 tests each) |
 | Lint | No lint script/config exists in the repository; not claimed as run |
 
-Responsive review was done by inspecting the CSS breakpoints (320/375/390, 640–1023, ≥1024) rather than by measured screenshots, because this sandbox has no browser binary. A live preview remains the recommended manual check.
+The browser suite was extended for this phase: the 7-day chart must render its single `role="img"` SVG, 7 axis labels, a data table with 7 rows and the generated "terhangat pada hari …" summary; the chart frame and its axis cells must stay inside the panel (checked against bounding boxes at 320px and 1440px); the daily list must mark exactly one day with `aria-current="date"`; and reduced motion must report `animationName: none` for `.chart-frame` and `.daily-row`.
+
+The browser suite could not be executed inside this sandbox (no Chromium binary, and browser downloads are network-restricted), so it was verified through the GitHub Actions run on this branch instead.
 
 ### Accessibility notes
 
@@ -88,10 +90,14 @@ Responsive review was done by inspecting the CSS breakpoints (320/375/390, 640�
 - Current day is marked by text and `aria-current`, not colour alone; the range bar uses one mint accent (no colour-encoded severity).
 - `prefers-reduced-motion` removes the chart and row entrance animations through the existing global rule.
 
+### Branch state note
+
+While this branch was open, a competing Phase 2.3 implementation (`f45020e`, `d335809`, `3ddecb2`, `4f40845`, `fe2ee91`, `d8a9087`) was pushed straight to `main`. It renamed the daily heading to "Prakiraan 7 Hari", reworded the range `aria-label`, made the chart daily by default and rewrote `Forecast.test.tsx` — which removed the UV test and the hourly-chart coverage and left `main` red on `Unit test`. This branch keeps the original strings, keeps every pre-existing test, and adds the 7-day chart as `mode="daily"`; `main` was merged in twice and the conflicting files resolved in favour of this branch, so merging this PR restores green CI. Two small ideas from those commits were kept: ellipsis truncation for long condition labels and `tabular-nums` on the temperature range.
+
 ### Remaining limitations
 
-- No measured browser/screenshot QA in this phase; the Playwright suite (which asserts no page overflow, 44px touch targets and axe clean at 320–1440px) should be run locally with `npx playwright install --with-deps chromium && npm run test:browser`.
-- The 7-day chart plots daily min/max only; a combined hourly+ daily view would need a deliberate UX decision (deferred, not part of this phase).
+- No screenshot review was performed by a human in this phase (CI only asserts the automated checks; screenshots stay in ignored `test-results/`). A visual pass in a real browser is still recommended.
+- The 7-day chart plots daily min/max only; a combined hourly + daily view would need a deliberate UX decision (deferred, not part of this phase).
 
 ## Remaining limitations / Phase 3
 
