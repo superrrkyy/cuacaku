@@ -129,6 +129,17 @@ describe("getWeather()", () => {
     expect(w.daily[1].uv).toBe(0); // null → 0
   });
 
+  it("preserves unavailable hourly probability instead of inventing zero", async () => {
+    const raw = structuredClone(fixture);
+    const probabilities: (number | null)[] = [...raw.hourly.precipitation_probability];
+    probabilities[1] = null;
+    probabilities[2] = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => okJson({ ...raw, hourly: { ...raw.hourly, precipitation_probability: probabilities } })));
+    const result = await getWeather(0, 0);
+    expect(result.hourly[0].rain).toBeNull();
+    expect(result.hourly[1].rain).toBe(0);
+  });
+
   it("meminta parameter & timezone yang benar ke Open-Meteo", async () => {
     const fetchMock = vi.fn(async (_url: string) => okJson(fixture));
     vi.stubGlobal("fetch", fetchMock);

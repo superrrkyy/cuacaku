@@ -27,6 +27,8 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 it("renders 24 forecast hours, current hour and rain probabilities with day/night icons", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-13T00:15:00Z"));
   data.hourly[1] = { ...data.hourly[1], code: 0, isDay: false, rain: 70 };
   await view.render(<HourlyForecast data={data} />);
   expect(view.container.querySelectorAll("li")).toHaveLength(24);

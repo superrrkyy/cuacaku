@@ -60,3 +60,15 @@ export function sunProgress(sunrise: string, sunset: string, timezone: string, n
   if (end <= start) return null;
   return Math.max(0, Math.min(1, (value - start) / (end - start)));
 }
+
+/** Location calendar hour, including its date so midnight never matches the wrong day.
+ * Offset-free Open-Meteo timestamps are already local; absolute instants use Intl.
+ */
+export function localHourKey(iso: unknown, timezone: string): string | null {
+  if (typeof iso !== "string") return null;
+  // Validate before Date parsing, which otherwise rolls e.g. February 30 forward.
+  const wallTime = iso.replace(/(Z|[+-]\d{2}:\d{2})$/, "").replace(/\.\d+$/, "");
+  if (!isLocalTime(wallTime)) return null;
+  const local = localParts(iso, timezone);
+  return isLocalTime(local) ? local.slice(0, 13) : null;
+}
