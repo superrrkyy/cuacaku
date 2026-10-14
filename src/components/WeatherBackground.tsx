@@ -31,7 +31,7 @@ export default function WeatherBackground({
   const atmosphereClass = `${visual} atmosphere--${dayPart}`;
 
   return (
-    <div aria-hidden="true" className={`atmosphere atmosphere--${atmosphereClass}`}>
+    <div aria-hidden="true" className={`atmosphere ${atmosphereClass}`}>
       <span className="atmosphere-orb" />
       <span className="atmosphere-horizon" />
     </div>
