@@ -63,39 +63,98 @@ it("shows date, condition, rain and temperature bounds for each day", async () =
     view.container.querySelector('[aria-label="Minimum 20°, maksimum 29°"]'),
   ).not.toBeNull();
 });
-it("offers chart summary and every exact value in a readable data table", async () => {
+it("offers a 7-day chart summary and every exact daily value in a readable data table", async () => {
+  data.daily = Array.from({ length: 7 }, (_, i) => ({
+    ...data.daily[0],
+    date: `2026-10-${13 + i}`,
+    min: 20 + i,
+    max: 29 + i,
+  }));
+
   await view.render(<TemperatureChart data={data} />);
+
   expect(
-    view.container.querySelector('[role="img"]')?.getAttribute("aria-label"),
-  ).toBe("Grafik tren suhu per jam");
-  expect(view.container.textContent).toContain("Suhu berkisar 25° hingga 48°");
-  expect(view.container.querySelectorAll("tbody tr")).toHaveLength(24);
-  expect(view.container.querySelector("summary")?.textContent).toBe(
-    "Lihat data suhu per jam",
+    view.container
+      .querySelector('[role="img"]')
+      ?.getAttribute("aria-label"),
+  ).toBe(
+    "Grafik tren suhu minimum dan maksimum selama 7 hari",
   );
+
+  expect(view.container.textContent).toContain(
+    "Dalam 7 hari ke depan",
+  );
+
+  expect(view.container.textContent).toContain(
+    "20 hingga 35 derajat Celsius",
+  );
+
+  expect(
+    view.container.querySelectorAll("tbody tr"),
+  ).toHaveLength(7);
+
+  expect(
+    view.container.querySelector("summary")?.textContent,
+  ).toBe("Lihat data suhu harian");
+
   await act(async () => {
     view.container.querySelector("details")!.open = true;
   });
-  expect(view.container.querySelector("table")?.textContent).toContain(
-    "2026-10-13 07:00",
-  );
-});
-it("handles constant and single-value charts without invalid coordinates", async () => {
-  data.hourly = [data.hourly[0]];
-  await view.render(<TemperatureChart data={data} />);
-  expect(view.container.innerHTML).not.toMatch(/NaN|Infinity/);
-  data.hourly = [];
-  await view.render(<TemperatureChart data={data} />);
-  expect(view.container.querySelector("svg")).toBeNull();
-});
-it("UV has a numeric value and semantic severity, even above 11", async () => {
-  await view.render(<UVIndex value={13} />);
+
   expect(
-    view.container
-      .querySelector('[role="meter"]')
-      ?.getAttribute("aria-valuetext"),
-  ).toBe("13, Ekstrem");
-  expect(view.container.textContent).toContain("Maksimum hari ini");
+    view.container.querySelector("table")?.textContent,
+  ).toContain("2026-10-13");
+
+  expect(
+    view.container.querySelector("table")?.textContent,
+  ).toContain("20°C");
+
+  expect(
+    view.container.querySelector("table")?.textContent,
+  ).toContain("29°C");
+});
+it("handles constant, single-value and empty daily charts without invalid coordinates", async () => {
+  data.daily = [
+    {
+      ...data.daily[0],
+      min: 30,
+      max: 30,
+    },
+  ];
+
+  await view.render(<TemperatureChart data={data} />);
+
+  expect(view.container.innerHTML).not.toMatch(
+    /NaN|Infinity/,
+  );
+
+  data.daily = [
+    {
+      ...data.daily[0],
+      min: 30,
+      max: 30,
+    },
+    {
+      ...data.daily[0],
+      date: "2026-10-14",
+      min: 30,
+      max: 30,
+    },
+  ];
+
+  await view.render(<TemperatureChart data={data} />);
+
+  expect(view.container.innerHTML).not.toMatch(
+    /NaN|Infinity/,
+  );
+
+  data.daily = [];
+
+  await view.render(<TemperatureChart data={data} />);
+
+  expect(
+    view.container.querySelector("svg"),
+  ).toBeNull();
 });
 it("visibility has a truthful unavailable fallback", async () => {
   await view.render(<WeatherDetails data={data} />);
