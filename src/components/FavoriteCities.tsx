@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { getWeather, info, type Place, type Weather } from "../weather";
 import { errorMessage, isAbortError } from "../lib/api";
+import { placeKey } from "../lib/place";
 import WeatherIcon from "./WeatherIcon";
-export const placeKey = (place: Place) =>
-  `${place.latitude},${place.longitude}`;
 type Snapshot = { data?: Weather; error?: string };
 export default function FavoriteCities({
   favorites,
@@ -65,6 +64,7 @@ export default function FavoriteCities({
     }
     return () => controller.abort();
     // Snapshots are deliberately not a trigger: settling a card must not refetch other cards.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [favorites, place, online]);
   if (!favorites.length)
     return (

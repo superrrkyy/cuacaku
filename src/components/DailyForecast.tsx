@@ -45,7 +45,7 @@ export default function DailyForecast({ data }: Props) {
         ];
       })
       .slice(0, DAY_COUNT);
-  }, [data.daily, data.current?.time, timezone]);
+  }, [data, timezone]);
 
   // One shared scale so every bar is comparable, without encoding severity in colour.
   const scale = useMemo(() => {

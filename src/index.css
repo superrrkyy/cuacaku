@@ -1,6 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* CuacaKu menuliskan seluruh styling-nya sendiri (tanpa framework CSS).
+   `.sr-only` adalah satu-satunya utility: teks untuk screen reader saja. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
 
 :root {
   font-family:
@@ -20,6 +30,54 @@
 }
 * {
   box-sizing: border-box;
+}
+/* Reset dasar (pengganti preflight yang sebelumnya datang dari Tailwind). */
+html {
+  -webkit-text-size-adjust: 100%;
+  line-height: 1.5;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+dl,
+dd,
+figure {
+  margin: 0;
+}
+/* `svg` sengaja TIDAK dipaksa `display: block`: ikon tetes hujan di
+   `.rain-chance` (HourlyForecast/DailyForecast) dan titik `.local-clock-dot`
+   harus tetap inline. SVG level blok (.weather-icon, .sun-arc,
+   .temperature-chart) sudah mengatur `display`-nya sendiri. */
+img,
+svg,
+video {
+  max-width: 100%;
+}
+input,
+button,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+input::placeholder {
+  color: #ffffff80;
+}
+hr {
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 body {
   margin: 0;
@@ -96,6 +154,26 @@ p {
   inset: 0;
   opacity: 0.3;
 }
+/* Elemen dekoratif (aria-hidden): matahari/bulan dan kabut ufuk.
+   Phase 2.5 mewarnainya per fase hari lokasi, bukan per jam perangkat. */
+.atmosphere-orb {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f4dfa630, transparent 68%);
+  filter: blur(2px);
+}
+.atmosphere-horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34vh;
+  background: linear-gradient(transparent, #050a1559);
+}
 .atmosphere--clear-day {
   background:
     radial-gradient(ellipse at 78% 10%, #66604744, transparent 45%),
@@ -162,6 +240,39 @@ p {
     transform: translateX(24px);
     opacity: 0.5;
   }
+}
+/* Phase 2.5 — fase hari di lokasi (dawn/day/dusk/night) dari `lib/daylight.ts`.
+   Sengaja hanya penyesuaian halus di atas state cuaca: state cuaca tetap
+   menentukan identitas latar, fase hari hanya menggeser nuansa. */
+.atmosphere--dawn .atmosphere-orb {
+  background: radial-gradient(circle, #f0b98a3d, transparent 68%);
+}
+.atmosphere--dawn .atmosphere-horizon {
+  background: linear-gradient(transparent, #f0b98a1f 55%, #2a1c3359);
+}
+.atmosphere--dusk .atmosphere-orb {
+  background: radial-gradient(circle, #e79a6a38, transparent 70%);
+}
+.atmosphere--dusk .atmosphere-horizon {
+  background: linear-gradient(transparent, #d9784f26 52%, #1b1024a6);
+}
+.atmosphere--day .atmosphere-orb {
+  background: radial-gradient(circle, #ffe6b038, transparent 66%);
+}
+.atmosphere--night .atmosphere-orb {
+  background: radial-gradient(circle, #c9d8f526, transparent 66%);
+}
+.atmosphere--night .atmosphere-horizon {
+  background: linear-gradient(transparent, #04070f8c);
+}
+.atmosphere--night::after {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #d5e2f8 90%, transparent),
+    radial-gradient(1px 1px at 62% 9%, #d5e2f8 85%, transparent),
+    radial-gradient(1px 1px at 84% 27%, #d5e2f8 80%, transparent),
+    radial-gradient(1px 1px at 38% 31%, #d5e2f8 75%, transparent);
+  background-size: 460px 380px;
+  opacity: 0.22;
 }
 .glass {
   background: linear-gradient(125deg, #1a29406b, #1822384a);
@@ -333,6 +444,42 @@ p {
 }
 .search-dropdown [role="option"] {
   min-height: 60px;
+}
+.search-option {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  color: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.search-option:last-child {
+  border-bottom: 0;
+}
+.search-option:hover,
+.search-option.active {
+  background: #ffffff1a;
+}
+.search-option-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.search-option-region {
+  display: block;
+  font-size: 11px;
+  color: #ffffff99;
+  margin-top: 2px;
+}
+.search-message {
+  padding: 12px 16px;
+  font-size: 12px;
+}
+.search-message--empty {
+  color: #ffffff99;
+}
+.text-button--link {
+  text-decoration: underline;
 }
 .favorites-empty {
   color: var(--muted);
@@ -566,6 +713,12 @@ p {
   font-size: 12px;
   font-weight: 500;
 }
+.hero-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
 .hero-updated {
   font-size: 10px;
   border-top: 1px solid var(--line);
@@ -573,6 +726,46 @@ p {
 }
 .hero-updated span {
   display: block;
+}
+/* Phase 2.4 — jam lokal lokasi (bukan jam perangkat). */
+.local-clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.local-clock-time {
+  display: block;
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  color: #edf2fc;
+}
+.local-clock-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #ffffff99;
+}
+.local-clock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  flex: none;
+}
+@media (min-width: 640px) {
+  .local-clock-time {
+    font-size: 30px;
+  }
+  .local-clock-meta {
+    font-size: 12px;
+  }
 }
 .today-trends {
   display: grid;
@@ -1461,6 +1654,14 @@ p {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+/* Elemen dekoratif baru (orb/ufuk) ikut disembunyikan: tanpa animasi keduanya
+   hanya gradien diam yang tidak menambah informasi. */
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere-orb,
+  .atmosphere-horizon {
+    display: none !important;
   }
 }
 .temperature-chart {

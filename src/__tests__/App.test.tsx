@@ -42,6 +42,16 @@ describe("App regression protection", () => {
     expect(view.container.querySelector(".atmosphere--rain")).not.toBeNull();
     expect(view.container.querySelector('[role="img"][aria-label="Hujan Ringan, siang"]')).not.toBeNull(); expect(button("Muat ulang cuaca")?.hasAttribute("disabled")).toBe(false);
   });
+  it("passes the location timezone to the atmosphere and the hero clock", async () => {
+    vi.setSystemTime(new Date("2026-10-14T22:30:00Z")); // 05:30 WIB → dawn
+    await view.render(<App />);
+    // Phase 2.5 only reaches the DOM when App forwards `data.timezone`.
+    expect(view.container.querySelector(".atmosphere--dawn")).not.toBeNull();
+    expect(view.container.querySelector(".atmosphere--rain")).not.toBeNull();
+    // Phase 2.4 clock is wired into the hero footer.
+    expect(view.container.querySelector(".hero-footer .local-clock")).not.toBeNull();
+    expect(view.container.querySelector(".local-clock-time")?.textContent).toBe("05:30:00");
+  });
   it("refresh loading disables button, clears old data and exposes retry on failure", async () => {
     await view.render(<App />);
     const pending = deferred<Weather>(); get.mockReturnValueOnce(pending.promise);

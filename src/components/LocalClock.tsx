@@ -5,41 +5,44 @@ interface LocalClockProps {
   locationName?: string;
   locale?: string;
   className?: string;
+  /** Injectable instant for tests; the app always uses the current time. */
+  now?: Date;
 }
 
+/**
+ * Location-local clock. The reading itself is the accessible text, so nothing
+ * here needs `aria-label` on a non-interactive element; the context sentence is
+ * provided separately for screen readers and the digits stay `aria-hidden` to
+ * avoid a second, duplicated announcement.
+ */
 export function LocalClock({
   timezone,
   locationName,
   locale = "id-ID",
   className = "",
+  now,
 }: LocalClockProps) {
-  const { time, zoneLabel } = useLocalClock(timezone, locale);
-
-  const accessibleLabel = locationName
-    ? `Waktu lokal saat ini di ${locationName}: ${time}`
-    : `Waktu lokal saat ini: ${time}`;
+  const { time, dateTime, zoneLabel } = useLocalClock(timezone, locale, now);
+  const unavailable = time === "--:--:--";
+  const context = locationName
+    ? `Waktu lokal di ${locationName} (${zoneLabel}).`
+    : `Waktu lokal (${zoneLabel}).`;
 
   return (
-    <div
-      className={`local-clock ${className}`.trim()}
-      aria-label={accessibleLabel}
-      data-testid="local-clock"
-    >
-      <time
-        dateTime={time === "--:--:--" ? undefined : time}
-        className="block font-mono text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl"
-        aria-hidden="true"
-      >
+    <p className={`local-clock${className ? ` ${className}` : ""}`}>
+      <time dateTime={dateTime} className="local-clock-time" aria-hidden={unavailable ? undefined : true}>
         {time}
       </time>
-
-      <div className="mt-1 flex items-center gap-2 text-xs text-white/60 sm:text-sm">
-        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+      <span className="sr-only">
+        {unavailable ? "Waktu lokal tidak tersedia." : `${time}. ${context}`}
+      </span>
+      <span className="local-clock-meta" aria-hidden="true">
+        <span className="local-clock-dot" />
         <span>{locationName ?? "Waktu lokal"}</span>
         <span aria-hidden="true">•</span>
         <span>{zoneLabel}</span>
-      </div>
-    </div>
+      </span>
+    </p>
   );
 }
 

@@ -8,7 +8,8 @@ import DailyForecast from "./components/DailyForecast";
 import TemperatureChart from "./components/TemperatureChart";
 import WeatherDetails from "./components/WeatherDetails";
 import SunCycle from "./components/SunCycle";
-import FavoriteCities, { placeKey } from "./components/FavoriteCities";
+import FavoriteCities from "./components/FavoriteCities";
+import { placeKey } from "./lib/place";
 
 import { readPlace, readFavorites, writeStorage } from "./lib/storage";
 import { errorMessage, isAbortError } from "./lib/api";
@@ -110,7 +111,7 @@ export default function App() {
   const c = data?.current;
   return (
     <div className="app-shell">
-      <WeatherBackground code={c?.code} isDay={c?.isDay} />
+      <WeatherBackground code={c?.code} isDay={c?.isDay} timezone={data?.timezone} />
       <a className="skip-link" href="#weather-content">
         Lewati ke cuaca
       </a>

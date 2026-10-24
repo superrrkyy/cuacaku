@@ -12,10 +12,12 @@ concurrency:
 
 permissions:
   contents: read
+  # Diperlukan langkah diagnostik untuk memposting komentar ke PR.
+  pull-requests: write
 
 jobs:
   quality:
-    name: Typecheck · Test · Build
+    name: Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -33,7 +35,10 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
-      - name: Pemeriksaan tipe
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Pemeriksaan tipe (app + config/e2e)
         run: npm run typecheck
 
       - name: Unit test
@@ -42,14 +47,55 @@ jobs:
       - name: Regression timezone perangkat
         run: |
           for zone in UTC Asia/Jakarta Asia/Tokyo Europe/London America/New_York; do
-            TZ="$zone" npx vitest run src/__tests__/dates.test.ts src/__tests__/weather.test.ts src/__tests__/visuals.test.ts src/__tests__/DailyForecast.test.tsx src/__tests__/TemperatureChart.test.tsx || exit 1
+            TZ="$zone" npx vitest run \
+              src/__tests__/dates.test.ts \
+              src/__tests__/weather.test.ts \
+              src/__tests__/visuals.test.ts \
+              src/__tests__/daylight.test.ts \
+              src/__tests__/localClock.test.ts \
+              src/__tests__/LocalClock.test.tsx \
+              src/__tests__/WeatherBackground.test.tsx \
+              src/__tests__/DailyForecast.test.tsx \
+              src/__tests__/TemperatureChart.test.tsx || exit 1
           done
 
       - name: Build produksi
         run: npm run build
+
+      - name: Audit dependensi runtime
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Pasang Chromium untuk browser checks
         run: npx playwright install --with-deps chromium
 
       - name: Responsive, accessibility, dan interaction checks
         run: npm run test:browser
+
+      # Log Actions berada di host blob yang tidak selalu dapat diakses (mis. dari
+      # sandbox review). Bila browser checks gagal, ringkasannya diposting ke PR
+      # lewat api.github.com agar tetap bisa didiagnosis.
+      # `always()` agar laporan tetap terkirim walau langkah di atasnya gagal;
+      # `continue-on-error` agar kegagalan melapor tidak menambah merah run.
+      - name: Laporkan hasil browser checks ke PR
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          npm run test:browser > browser-checks.log 2>&1
+          status=$?
+          {
+            if [ "$status" -eq 0 ]; then
+              echo "### ✅ Ulangan browser checks lulus (langkah diagnostik)"
+            else
+              echo "### ❌ Ulangan browser checks gagal (exit $status) — langkah diagnostik"
+            fi
+            echo
+            echo "Run: ${{ github.run_id }} · job: ${{ github.job }}"
+            echo
+            echo '```'
+            tail -n 180 browser-checks.log
+            echo '```'
+          } > browser-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file browser-report.md

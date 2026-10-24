@@ -41,3 +41,7 @@ coverage/
 # browser checks (regenerate locally)
 test-results/
 playwright-report/
+
+# artefak audit lokal (tidak untuk di-commit)
+REPO_REVIEW.md
+REPO_AUDIT_ULANG.md

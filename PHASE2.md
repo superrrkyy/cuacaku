@@ -1,5 +1,9 @@
 # Phase 2 — Premium UI & Weather Visualization
 
+> Tabel "Validation executed" pada setiap bagian di bawah adalah **arsip pada saat fase itu
+> selesai**. Kondisi repo terbaru (jumlah test, ukuran build, hasil audit, tooling) ada di
+> bagian **Phase 2.6 — Repository cleanup** pada dokumen ini dan di `README.md`.
+
 ## Scope and architecture
 
 React 18, TypeScript, Vite, Tailwind and the existing Open-Meteo API architecture remain in place. No backend, authentication, chart runtime, icon package, remote font, image asset or animation runtime was added. Existing storage keys, eight-city favorite limit, search debounce, request cancellation, error handling, offline recovery, geolocation-on-user-action and ten-minute selected-city refresh are retained.
@@ -99,9 +103,135 @@ While this branch was open, a competing Phase 2.3 implementation (`f45020e`, `d3
 - No screenshot review was performed by a human in this phase (CI only asserts the automated checks; screenshots stay in ignored `test-results/`). A visual pass in a real browser is still recommended.
 - The 7-day chart plots daily min/max only; a combined hourly + daily view would need a deliberate UX decision (deferred, not part of this phase).
 
+## Phase 2.6 — Repository cleanup (Oktober 2026)
+
+Audit repo menemukan beberapa fitur yang sudah di-merge tetapi belum benar-benar tersambung,
+dokumentasi yang basi, dan toolchain yang menyisakan advisory. Fase ini membersihkannya tanpa
+mengubah arsitektur data.
+
+### Yang diperbaiki
+
+- **`WeatherBackground` kini menerima timezone lokasi.** `App.tsx` sebelumnya hanya meneruskan
+  `code`/`isDay`, sehingga `getDayPart()` (Phase 2.5) tidak pernah berjalan di produksi.
+  Sekarang `timezone={data?.timezone}` diteruskan, fase hari dihitung per menit dari timezone
+  lokasi, dan fallback `isDay` tetap dipakai sebelum data tersedia.
+- **CSS untuk fase hari akhirnya ada.** `.atmosphere--dawn|day|dusk|night` sebelumnya tidak
+  memiliki aturan apa pun (kelas mati). Ditambahkan sebagai penyesuaian halus **di atas** state
+  cuaca — state cuaca tetap menentukan identitas latar — plus `.atmosphere-orb` dan
+  `.atmosphere-horizon` yang sebelumnya dirender tanpa styling sama sekali. Keduanya
+  disembunyikan pada `prefers-reduced-motion`.
+- **Jam lokal (Phase 2.4) dirapikan.** `.hero-footer`, `.local-clock`, `.local-clock-time`,
+  `.local-clock-meta`, `.local-clock-dot` kini punya CSS sendiri (sebelumnya hanya bergantung
+  pada utility Tailwind). `aria-label` pada `<div>` tanpa role diganti teks `sr-only`
+  (pembaca layar dapat kalimat konteks, angka tetap `aria-hidden` agar tidak ganda),
+  `<time datetime>` kini membawa tanggal + jam yang valid, dan `Intl.DateTimeFormat` di-cache
+  per locale/timezone (sebelumnya dua formatter dibuat setiap detik).
+- **Bug format jam `id-ID`.** CLDR memformat `id-ID` sebagai `20.00.00` (titik). Jam hero
+  dirakit dari `formatToParts` sehingga selalu `hh:mm:ss` di lingkungan/versi ICU mana pun;
+  ada test yang menguncinya.
+- **Tailwind CSS 3 dilepas.** Hanya ±10 utility yang dipakai, sementara seluruh tampilan berasal
+  dari 1.700+ baris CSS manual. Utility itu diganti kelas semantik (`.search-option`,
+  `.search-message`, `.text-button--link`), `.sr-only` ditulis sendiri, dan **reset dasar
+  pengganti preflight** ditambahkan eksplisit (`box-sizing`, margin heading, `list-style` untuk
+  `ul/ol`, `display: block` untuk `svg/img`, `font: inherit` untuk form control, placeholder)
+  agar tampilan tidak berubah. `tailwind.config.js`, `postcss.config.js`, `tailwindcss`,
+  `postcss`, dan `autoprefixer` dihapus. Hasil: `npm audit` **0 vulnerability** (sebelumnya
+  3 moderate dari rantai `postcss-selector-parser`) dan CSS build turun dari 32,68 kB ke
+  24,58 kB.
+- **`placeKey` dipindah** dari `components/FavoriteCities.tsx` ke `lib/place.ts` agar satu file
+  komponen tidak mengekspor fungsi (fast refresh) dan `App` tidak mengimpor dari komponen.
+- **Lint tersedia.** ESLint 10 flat config (`@eslint/js`, `typescript-eslint`,
+  `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-config-prettier`) plus
+  Prettier. `npm run lint` bersih 0 error/0 warning. Rule compiler React dari
+  `eslint-plugin-react-hooks` v7 (`set-state-in-effect`, `purity`, `immutability`, …) **sengaja
+  tidak diaktifkan**: rule itu menandai pola "sinkronkan state saat mount/loading" di
+  `useWeather`, `useLocalClock`, `Search`, dan `FavoriteCities`, dan memenuhinya berarti refactor
+  besar yang berisiko regresi — dicatat sebagai pekerjaan terpisah.
+- **Typecheck mencakup config & E2E.** `tsconfig.json` dipecah menjadi `tsconfig.base.json` +
+  `tsconfig.app.json` (`src/`) + `tsconfig.e2e.json` (`tests/`, `dev/`, `playwright.config.ts`,
+  `vite.config.ts`, `vite.mock.config.ts`, `vitest.config.ts`, `eslint.config.js`). Sebelumnya
+  hanya `src/` yang diperiksa.
+- **Mode pengembangan offline.** `npm run dev:mock` menyajikan payload Open-Meteo/Nominatim
+  tiruan dari server Vite yang sama (`dev/openMeteoMock.ts`), dengan skenario
+  `clear|cloud|rain|storm|snow|fog|night|partial` melalui `sessionStorage["cuacaku:mock"]`.
+  Payload dibuat relatif terhadap jam Jakarta sekarang sehingga lolos validasi fail-closed.
+  Cabang ini dijaga `import.meta.env.DEV` dan tereliminasi dari build produksi
+  (fungsi `endpoint()` ter-minify menjadi `return live`).
+- **Regresi yang ditangkap browser checks.** Reset pengganti preflight semula meniru Tailwind
+  dengan `svg { display: block }` secara global. Run CI pertama pada branch ini **gagal** di
+  langkah browser checks: ikon tetes hujan di `.rain-chance` (HourlyForecast/DailyForecast)
+  turun ke baris sendiri sehingga tinggi kartu berubah. Aturan itu dipersempit menjadi
+  `max-width: 100%` saja — SVG level blok (`.weather-icon`, `.sun-arc`, `.temperature-chart`)
+  sudah mengatur `display` sendiri, dan SVG di `.locate-button` diblockify oleh flex. Run
+  berikutnya hijau penuh. Ini alasan `test:browser` tidak boleh dilewati meski unit test lulus.
+- **CI/CD**: `ci.yml` menambah langkah `npm run lint` dan `npm audit --omit=dev
+  --audit-level=moderate`, serta memperluas regresi timezone ke suite `daylight`, `localClock`,
+  `LocalClock`, dan `WeatherBackground`. `deploy.yml` memakai `npm ci` + cache npm (sebelumnya
+  `npm install`, yang bisa menyimpang dari lockfile). Ditambah satu langkah diagnostik: bila
+  browser checks gagal, 180 baris terakhir output-nya diposting ke PR lewat `api.github.com`
+  karena log job Actions tersimpan di host blob yang tidak selalu dapat diakses dari sandbox.
+- **Dokumentasi**: README ditulis ulang agar sesuai kondisi repo (Tailwind dilepas, lint/format,
+  jumlah test, dev:mock, audit bersih), `CONTRIBUTING.md` dibersihkan dari sisa template proyek
+  lain (`pip install -r requirements.txt`, contoh commit "CryptoKu"/"API key YouTube",
+  "TypeScript/Python"), `SECURITY.md` tidak lagi menyebut layanan yang tidak dipakai proyek.
+
+### Test baru
+
+| Suite | Cakupan |
+| --- | --- |
+| `src/__tests__/LocalClock.test.tsx` (5) | Jam hero: timezone lokasi (bukan perangkat), `datetime` valid, fallback tanpa/invalid timezone, tick 1 detik + interval dibersihkan saat unmount, tidak ada interval untuk instant yang dipatok |
+| `src/__tests__/WeatherBackground.test.tsx` (9) | Fase hari dari timezone lokasi (fajar/siang/senja/malam), evaluasi ulang per menit + pembersihan interval, fallback `isDay` tanpa timezone, timezone invalid → malam, tepat satu orb/horizon dekoratif |
+| `src/__tests__/localClock.test.ts` (+2) | Format `hh:mm:ss` untuk locale dengan pemisah titik, `localClockDateTime` untuk `<time>` |
+| `src/__tests__/App.test.tsx` (+1) | App benar-benar meneruskan `data.timezone` ke latar (`.atmosphere--dawn`) dan jam lokal tampil di `.hero-footer` |
+| `tests/dashboard.spec.ts` (+6 assertion × 7 viewport) | Jam lokal di browser nyata: terlihat, `datetime` valid, format `hh:mm:ss`, nama kota, label zona `WIB`, dan kelas fase hari `.atmosphere--day` |
+
+### Validasi dijalankan (lokal, Node 22 / ICU 78.2)
+
+| Pemeriksaan | Hasil |
+| --- | --- |
+| `npm run lint` | 0 error, 0 warning |
+| `npm run typecheck` (app + e2e) | Lulus |
+| `npm test` | **345 test lulus di 16 file** (sebelumnya 328/14) |
+| `npm run build` | Lulus — **191,29 kB JS (61,81 kB gzip)**, **24,58 kB CSS (6,27 kB gzip)** |
+| `npm audit` | **0 vulnerability** |
+| `npm audit --omit=dev` | **0 vulnerability** |
+| `npm run dev:mock` | Payload mock lolos validasi `getWeather()` (current ∈ hourly, sisa ≥ 24 jam, `daily[0]` = tanggal current) |
+| `npm run test:browser` | ✅ **lulus di CI (Chromium nyata)** pada PR #23 — run `40091546308`, seluruh 12 langkah `success`: tanpa overflow halaman, 7 baris harian, 24 kartu per jam, target sentuh 44 px, fokus terlihat, **0 axe violation** (wcag2a/2aa/21aa) pada 320/375/390/768/1024/1280/1440 px, grafik 7 hari, reduced motion. Tidak dapat dijalankan di sandbox (tanpa binary Chromium, unduhan browser diblokir) |
+
+Regresi timezone dijalankan ulang secara lokal untuk 9 suite (`dates`, `weather`, `visuals`,
+`daylight`, `localClock`, `LocalClock`, `WeatherBackground`, `DailyForecast`,
+`TemperatureChart`): **137 test lulus pada masing-masing dari 5 zona** (`UTC`, `Asia/Jakarta`,
+`Asia/Tokyo`, `Europe/London`, `America/New_York`). Daftar suite yang sama dipakai langkah CI.
+Test jam/fase hari baru memakai instant yang dipatok + timezone eksplisit, jadi hasilnya tidak
+bergantung pada `TZ` runner.
+
+### Yang masih perlu ditinjau manusia
+
+- Browser checks **sudah** lulus di Chromium nyata, tetapi yang mereka assert adalah metrik
+  (overflow, jumlah baris/kartu, target sentuh, fokus, axe) — bukan kesan visual. Nuansa
+  `.atmosphere--dawn/dusk/night` dan proporsi `.hero-footer` + jam lokal tetap perlu dilihat
+  mata manusia; `npm run dev:mock` disediakan untuk itu (tanpa jaringan).
+- ~~Playwright belum punya assertion khusus untuk jam lokal/fase hari~~ → **sudah ditambahkan**:
+  pada ketujuh lebar viewport, browser suite kini menuntut jam hero terlihat, `<time datetime>`
+  berupa timestamp valid, format jam `hh:mm:ss` (regresi CLDR `id-ID`), penyebutan nama kota dan
+  label zona lokasi (`WIB` dari mock `Asia/Jakarta`, bukan zona runner), serta kehadiran kelas
+  fase hari (`.atmosphere--day` pada jam mock 10:30 WIB). Semuanya lulus di CI.
+- Screenshot Playwright tetap artefak di `test-results/` yang di-ignore, bukan baseline pixel-diff.
+- **Browser suite tercatat flaky sekali di CI.** Run `40092262546` (commit yang *hanya* mengubah
+  `README.md`/`PHASE2.md` — tidak menyentuh kode maupun spec) gagal di langkah browser checks,
+  sementara run sebelum dan sesudahnya dengan kode identik lulus, dan ulangan otomatis dari
+  langkah diagnostik melaporkan **18/18 lulus (30,5 s)**. Log job Actions tersimpan di host blob
+  yang tidak dapat diakses dari sandbox review, jadi test mana yang berkedip tidak dapat
+  dipastikan; kandidat terkuat adalah assertion `boundingBox()`/scroll yang peka beban pada runner.
+  Tindak lanjut yang disarankan: `retries: process.env.CI ? 1 : 0` + `trace: "retain-on-failure"`
+  di `playwright.config.ts`, dan meninjau assertion yang bergantung animasi/`boundingBox`.
+  Angka 18 test di dokumen ini diambil dari output CI, bukan hitungan manual.
+
 ## Remaining limitations / Phase 3
 
-- Live Open-Meteo requests were not validated from this network-restricted sandbox; unit and browser checks mock API responses. Real-browser live data, Safari/Firefox and real screen-reader/device testing remain recommended.
-- Full `npm audit` reports 7 development-toolchain advisories (5 high, 2 moderate) in the inherited Tailwind dependency tree. Production dependency audit is clean. No forced Tailwind major migration was performed in this UI phase.
+- Live Open-Meteo requests were not validated from this network-restricted sandbox; unit and browser checks mock API responses (`npm run dev:mock` menyediakan mock yang sama untuk pengembangan). Real-browser live data, Safari/Firefox and real screen-reader/device testing remain recommended.
+- ~~Full `npm audit` reports 7 development-toolchain advisories~~ → **selesai di Phase 2.6**: Tailwind 3 dilepas, `npm audit` sekarang 0 vulnerability (dev maupun runtime) dan dijaga langkah CI `npm audit --omit=dev --audit-level=moderate`.
 - Favorite previews are timestamped session snapshots, not independently auto-refreshed forecasts.
-- Recommended Phase 3: measured Lighthouse/Web Vitals budgets, cross-browser and screen-reader checks, reviewed pixel-diff baselines, a separately tested toolchain security update and deliberate cache/stale-data UX. Consider PWA/offline snapshots only with clear freshness labels and user consent for any new notification feature.
+- Polar edge case: saat Open-Meteo tidak mengembalikan sunrise/sunset (lintang ekstrem), seluruh payload tetap ditolak (`INVALID_RESPONSE`). Representasi "tidak tersedia" untuk kasus ini belum dibuat.
+- Rule compiler `eslint-plugin-react-hooks` v7 belum diaktifkan (lihat Phase 2.6); mengaktifkannya berarti refactor `useWeather`/`useLocalClock`/`Search`/`FavoriteCities`.
+- Recommended Phase 3: measured Lighthouse/Web Vitals budgets, cross-browser and screen-reader checks, reviewed pixel-diff baselines, perluasan browser checks untuk jam lokal & fase hari, dan deliberate cache/stale-data UX. Consider PWA/offline snapshots only with clear freshness labels and user consent for any new notification feature.
