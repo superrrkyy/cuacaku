@@ -63,7 +63,7 @@
 cuacaku/
 ├── .github/workflows/       # ci.yml (lint→typecheck→test→build→browser), deploy.yml (Pages)
 ├── dev/openMeteoMock.ts     # payload Open-Meteo tiruan untuk `npm run dev:mock`
-├── public/                  # favicon, og-image, aset README
+├── public/                  # favicon, og-image, aset gambar README
 ├── src/
 │   ├── components/          # hero, latar, ikon, per jam, 7 hari, grafik, detail, matahari,
 │   │                        # favorit, pencarian, jam lokal
@@ -73,7 +73,7 @@ cuacaku/
 │   ├── types/weather.ts     # model internal (diekspor ulang dari weather.ts)
 │   ├── __tests__/           # 16 file test (unit + interaksi React)
 │   ├── App.tsx · weather.ts · main.tsx · index.css
-├── tests/dashboard.spec.ts  # 19 pemeriksaan Playwright (responsif, axe, interaksi)
+├── tests/dashboard.spec.ts  # 19 test Playwright (responsif 320–1440 px, axe, interaksi, jam lokal)
 ├── eslint.config.js · .prettierrc.json
 ├── tsconfig.base.json · tsconfig.app.json · tsconfig.e2e.json
 ├── vite.config.ts · vite.mock.config.ts · vitest.config.ts · playwright.config.ts

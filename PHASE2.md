@@ -183,6 +183,7 @@ mengubah arsitektur data.
 | `src/__tests__/WeatherBackground.test.tsx` (9) | Fase hari dari timezone lokasi (fajar/siang/senja/malam), evaluasi ulang per menit + pembersihan interval, fallback `isDay` tanpa timezone, timezone invalid → malam, tepat satu orb/horizon dekoratif |
 | `src/__tests__/localClock.test.ts` (+2) | Format `hh:mm:ss` untuk locale dengan pemisah titik, `localClockDateTime` untuk `<time>` |
 | `src/__tests__/App.test.tsx` (+1) | App benar-benar meneruskan `data.timezone` ke latar (`.atmosphere--dawn`) dan jam lokal tampil di `.hero-footer` |
+| `tests/dashboard.spec.ts` (+6 assertion × 7 viewport) | Jam lokal di browser nyata: terlihat, `datetime` valid, format `hh:mm:ss`, nama kota, label zona `WIB`, dan kelas fase hari `.atmosphere--day` |
 
 ### Validasi dijalankan (lokal, Node 22 / ICU 78.2)
 
@@ -210,9 +211,11 @@ bergantung pada `TZ` runner.
   (overflow, jumlah baris/kartu, target sentuh, fokus, axe) — bukan kesan visual. Nuansa
   `.atmosphere--dawn/dusk/night` dan proporsi `.hero-footer` + jam lokal tetap perlu dilihat
   mata manusia; `npm run dev:mock` disediakan untuk itu (tanpa jaringan).
-- Playwright belum punya assertion khusus untuk jam lokal/fase hari (mis. jam hero tampil dan
-  mengikuti timezone lokasi). Unit test menutup logikanya; menambahkan cek DOM di browser suite
-  adalah langkah lanjut yang murah.
+- ~~Playwright belum punya assertion khusus untuk jam lokal/fase hari~~ → **sudah ditambahkan**:
+  pada ketujuh lebar viewport, browser suite kini menuntut jam hero terlihat, `<time datetime>`
+  berupa timestamp valid, format jam `hh:mm:ss` (regresi CLDR `id-ID`), penyebutan nama kota dan
+  label zona lokasi (`WIB` dari mock `Asia/Jakarta`, bukan zona runner), serta kehadiran kelas
+  fase hari (`.atmosphere--day` pada jam mock 10:30 WIB). Semuanya lulus di CI.
 - Screenshot Playwright tetap artefak di `test-results/` yang di-ignore, bukan baseline pixel-diff.
 
 ## Remaining limitations / Phase 3
