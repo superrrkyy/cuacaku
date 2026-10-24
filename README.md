@@ -73,7 +73,7 @@ cuacaku/
 │   ├── types/weather.ts     # model internal (diekspor ulang dari weather.ts)
 │   ├── __tests__/           # 16 file test (unit + interaksi React)
 │   ├── App.tsx · weather.ts · main.tsx · index.css
-├── tests/dashboard.spec.ts  # 19 test Playwright (responsif 320–1440 px, axe, interaksi, jam lokal)
+├── tests/dashboard.spec.ts  # 18 test Playwright (responsif 320–1440 px, axe, interaksi, jam lokal)
 ├── eslint.config.js · .prettierrc.json
 ├── tsconfig.base.json · tsconfig.app.json · tsconfig.e2e.json
 ├── vite.config.ts · vite.mock.config.ts · vitest.config.ts · playwright.config.ts

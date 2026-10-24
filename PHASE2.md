@@ -217,6 +217,15 @@ bergantung pada `TZ` runner.
   label zona lokasi (`WIB` dari mock `Asia/Jakarta`, bukan zona runner), serta kehadiran kelas
   fase hari (`.atmosphere--day` pada jam mock 10:30 WIB). Semuanya lulus di CI.
 - Screenshot Playwright tetap artefak di `test-results/` yang di-ignore, bukan baseline pixel-diff.
+- **Browser suite tercatat flaky sekali di CI.** Run `40092262546` (commit yang *hanya* mengubah
+  `README.md`/`PHASE2.md` — tidak menyentuh kode maupun spec) gagal di langkah browser checks,
+  sementara run sebelum dan sesudahnya dengan kode identik lulus, dan ulangan otomatis dari
+  langkah diagnostik melaporkan **18/18 lulus (30,5 s)**. Log job Actions tersimpan di host blob
+  yang tidak dapat diakses dari sandbox review, jadi test mana yang berkedip tidak dapat
+  dipastikan; kandidat terkuat adalah assertion `boundingBox()`/scroll yang peka beban pada runner.
+  Tindak lanjut yang disarankan: `retries: process.env.CI ? 1 : 0` + `trace: "retain-on-failure"`
+  di `playwright.config.ts`, dan meninjau assertion yang bergantung animasi/`boundingBox`.
+  Angka 18 test di dokumen ini diambil dari output CI, bukan hitungan manual.
 
 ## Remaining limitations / Phase 3
 
