@@ -12,6 +12,8 @@ concurrency:
 
 permissions:
   contents: read
+  # Diperlukan langkah diagnostik untuk memposting komentar ke PR.
+  pull-requests: write
 
 jobs:
   quality:
@@ -72,15 +74,25 @@ jobs:
       # Log Actions berada di host blob yang tidak selalu dapat diakses (mis. dari
       # sandbox review). Bila browser checks gagal, ringkasannya diposting ke PR
       # lewat api.github.com agar tetap bisa didiagnosis.
-      - name: Laporkan kegagalan browser checks ke PR
-        if: failure() && github.event_name == 'pull_request'
+      # `always()` agar laporan tetap terkirim walau langkah di atasnya gagal;
+      # `continue-on-error` agar kegagalan melapor tidak menambah merah run.
+      - name: Laporkan hasil browser checks ke PR
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
           npm run test:browser > browser-checks.log 2>&1
+          status=$?
           {
-            echo "### ❌ Browser checks gagal (di-posting otomatis oleh CI)"
+            if [ "$status" -eq 0 ]; then
+              echo "### ✅ Ulangan browser checks lulus (langkah diagnostik)"
+            else
+              echo "### ❌ Ulangan browser checks gagal (exit $status) — langkah diagnostik"
+            fi
+            echo
+            echo "Run: ${{ github.run_id }} · job: ${{ github.job }}"
             echo
             echo '```'
             tail -n 180 browser-checks.log
