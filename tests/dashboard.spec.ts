@@ -93,6 +93,15 @@ for (const width of [320, 375, 390, 768, 1024, 1280, 1440]) {
     ).toBe(true);
     await expect(page.locator(".daily-list > li")).toHaveCount(7);
     await expect(page.locator(".hourly-list > li")).toHaveCount(24);
+    // Phase 2.4/2.5: jam lokal memakai timezone lokasi (mock: Asia/Jakarta → WIB),
+    // bukan timezone runner/perangkat, dan fase hari ikut kelasnya sendiri.
+    const clock = page.locator(".hero-footer .local-clock");
+    await expect(clock).toBeVisible();
+    await expect(clock.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+    await expect(clock.locator(".local-clock-time")).toHaveText(/^\d{2}:\d{2}:\d{2}$/);
+    await expect(clock).toContainText("Jakarta");
+    await expect(clock).toContainText("WIB");
+    await expect(page.locator(".atmosphere--day")).toHaveCount(1);
     expect(
       await page
         .locator(".temperature")
