@@ -15,8 +15,9 @@
 
 <img src="https://img.shields.io/badge/React_18-20232A?style=flat-square&logo=react&logoColor=61DAFB" />
 <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" />
-<img src="https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
 <img src="https://img.shields.io/badge/Vite_6-646CFF?style=flat-square&logo=vite&logoColor=white" />
+<img src="https://img.shields.io/badge/Vitest_5-6E9F18?style=flat-square&logo=vitest&logoColor=white" />
+<img src="https://img.shields.io/badge/ESLint_10-4B32C3?style=flat-square&logo=eslint&logoColor=white" />
 <img src="https://img.shields.io/badge/License-MIT-22d3ee?style=flat-square" />
 
 </div>
@@ -25,56 +26,120 @@
 
 ## ✨ Fitur
 
-- 🌡️ **Cuaca sekarang** — suhu, terasa seperti, kondisi, min/maks
+- 🌡️ **Cuaca sekarang** — suhu, terasa seperti, kondisi, min/maks, visibilitas
 - 🕐 **Prakiraan 24 jam** dengan peluang hujan
-- 📅 **Prakiraan 7 hari** + grafik rentang suhu
-- 💧 **Detail lengkap** — kelembapan, angin, UV, tekanan, matahari terbit & terbenam
-- 🔍 **Cari kota** di seluruh dunia (otomatis saat mengetik)
-- 📍 **Lokasi otomatis** pakai GPS
-- ⭐ **Kota favorit** tersimpan di perangkat
-- 🎨 **Latar dinamis** sesuai cuaca & siang/malam, plus efek hujan 🌧️ dan bintang ✨
-- 🔄 **Auto-refresh** setiap 10 menit
-- 📱 Didesain untuk HP
+- 📅 **Prakiraan 7 hari** + grafik rentang suhu dan tren suhu 7 hari
+- 💧 **Detail lengkap** — kelembapan, angin, UV maksimum, tekanan, matahari terbit & terbenam
+- 🕰️ **Jam lokal lokasi** — memakai timezone kota yang dipilih, bukan timezone perangkat
+- 🌗 **Latar adaptif** — state cuaca (cerah/berawan/hujan/badai/salju/kabut) **dan** fase hari lokasi (fajar/siang/senja/malam)
+- 🔍 **Cari kota** di seluruh dunia (otomatis saat mengetik, navigasi keyboard penuh)
+- 📍 **Lokasi otomatis** pakai GPS (hanya atas aksi pengguna)
+- ⭐ **Kota favorit** (maks. 8) tersimpan di perangkat
+- 🔄 **Auto-refresh** setiap 10 menit, tanpa request bertumpuk
+- ♿ **Aksesibel** — landmark semantik, label ARIA, fokus terlihat, menghormati `prefers-reduced-motion`
+- 📱 Didesain untuk HP (diuji 320–1440 px)
 
 ## 🛠️ Teknologi
 
 | Bagian | Teknologi |
 |---|---|
-| UI | React 18 + TypeScript |
-| Styling | Tailwind CSS 3 |
+| UI | React 18 + TypeScript (`strict`) |
+| Styling | CSS tulisan sendiri di `src/index.css` — tanpa framework CSS |
 | Build | Vite 6 |
 | Data | [Open-Meteo](https://open-meteo.com) (gratis, tanpa API key) |
+| Test | Vitest 5 (unit + interaksi React) · Playwright + axe-core (browser) |
+| Kualitas | ESLint 10 (`typescript-eslint`, `react-hooks`) · Prettier |
 | Deploy | GitHub Actions → Pages |
+
+> **Catatan:** Tailwind CSS 3 dipakai sampai Oktober 2026 dan sudah dilepas. Hanya ±10
+> utility yang benar-benar dipakai, sementara seluruh tampilan berasal dari CSS manual;
+> rantai dependensi Tailwind juga satu-satunya sumber advisory `npm audit`. Reset dasar
+> (yang sebelumnya datang dari Tailwind *preflight*) sekarang ditulis eksplisit di
+> `src/index.css`, dan `.sr-only` dipertahankan sebagai satu-satunya utility.
 
 ## 📂 Struktur
 
 ```
 cuacaku/
-├── .github/workflows/deploy.yml
-├── public/favicon.svg
+├── .github/workflows/       # ci.yml (lint→typecheck→test→build→browser), deploy.yml (Pages)
+├── dev/openMeteoMock.ts     # payload Open-Meteo tiruan untuk `npm run dev:mock`
+├── public/                  # favicon, og-image, aset README
 ├── src/
-│   ├── components/Search.tsx
-│   ├── hooks/           # konektivitas dan lifecycle request cuaca
-│   ├── lib/             # HTTP, validasi, tanggal, storage, geolocation
-│   ├── types/weather.ts # model internal (juga diekspor dari weather.ts)
-│   ├── __tests__/       # unit & interaksi React
-│   ├── App.tsx
-│   ├── weather.ts
-│   ├── main.tsx
-│   └── index.css
-├── index.html
-├── package.json
-├── vite.config.ts
-├── tailwind.config.js
-├── postcss.config.js
-└── tsconfig.json
+│   ├── components/          # hero, latar, ikon, per jam, 7 hari, grafik, detail, matahari,
+│   │                        # favorit, pencarian, jam lokal
+│   ├── hooks/               # useWeather, useOnline, useLocalClock
+│   ├── lib/                 # api, validation, dates, daylight, geolocation, localClock,
+│   │                        # place, storage
+│   ├── types/weather.ts     # model internal (diekspor ulang dari weather.ts)
+│   ├── __tests__/           # 16 file test (unit + interaksi React)
+│   ├── App.tsx · weather.ts · main.tsx · index.css
+├── tests/dashboard.spec.ts  # 19 pemeriksaan Playwright (responsif, axe, interaksi)
+├── eslint.config.js · .prettierrc.json
+├── tsconfig.base.json · tsconfig.app.json · tsconfig.e2e.json
+├── vite.config.ts · vite.mock.config.ts · vitest.config.ts · playwright.config.ts
+└── index.html · package.json
 ```
 
 ## 🚀 Jalankan Lokal
 
 ```bash
-npm install
-npm run dev
+npm ci
+npm run dev          # http://localhost:5173/cuacaku/ — data Open-Meteo sungguhan
+```
+
+Tanpa jaringan (atau untuk meninjau tampilan tanpa menyentuh API publik):
+
+```bash
+npm run dev:mock     # payload tiruan dari server Vite yang sama
+```
+
+Mode mock menyetel `sessionStorage["cuacaku:mock"]` di tab itu. Ganti skenario cuaca dari
+konsol browser, lalu muat ulang:
+
+```js
+CUACAKU_MOCK_SCENARIO("storm");   // clear | cloud | rain | storm | snow | fog | night | partial
+```
+
+`partial` menghasilkan sebagian nilai `null` (UV / peluang hujan) untuk melihat keadaan "—".
+Jalur mock hanya aktif pada `import.meta.env.DEV`, sehingga build produksi tetap memanggil
+Open-Meteo sungguhan.
+
+## 🧪 Pemeriksaan Kualitas
+
+```bash
+npm ci
+npm run lint          # ESLint (0 error, 0 warning)
+npm run typecheck     # tsc: src/ (app) + tests/, config, dev/ (e2e)
+npm test              # Vitest
+npm run build         # typecheck + vite build
+npm run test:browser  # Playwright (butuh Chromium)
+npm audit             # 0 vulnerability (dev maupun runtime)
+```
+
+Format kode disediakan Prettier tetapi **tidak** dipaksakan pada file lama:
+
+```bash
+npm run format        # tulis format
+npm run format:check  # periksa saja
+```
+
+Chromium untuk browser checks:
+
+```bash
+npx playwright install --with-deps chromium
+npm run test:browser
+```
+
+Uji timezone perangkat (juga dijalankan CI pada 5 zona):
+
+```bash
+for zone in UTC Asia/Jakarta Asia/Tokyo Europe/London America/New_York; do
+  TZ="$zone" npx vitest run \
+    src/__tests__/dates.test.ts src/__tests__/weather.test.ts src/__tests__/visuals.test.ts \
+    src/__tests__/daylight.test.ts src/__tests__/localClock.test.ts src/__tests__/LocalClock.test.tsx \
+    src/__tests__/WeatherBackground.test.tsx src/__tests__/DailyForecast.test.tsx \
+    src/__tests__/TemperatureChart.test.tsx || exit 1
+done
 ```
 
 ## 🛡️ Phase 1 — Hardening
@@ -93,8 +158,10 @@ npm run dev
 - Type guard memeriksa timezone, current/hourly/daily, array wajib dan panjangnya,
   angka finite/range, kode WMO, tanggal kalender, dan koordinat. Forecast harus memuat
   jam current beserta 24 entri ke depan serta daily pertama pada tanggal current.
-  Array kosong/tidak konsisten ditolak. Untuk kompatibilitas model existing, nilai `null`
-  pada probabilitas hujan/UV tetap dipetakan ke `0`; nilai yang hilang atau tipe lain ditolak.
+  Array kosong/tidak konsisten ditolak. Nilai yang hilang atau bertipe lain selalu ditolak.
+  Untuk kompatibilitas model existing, `null` pada `uv_index_max` (harian) dan peluang hujan
+  per jam dipetakan ke `0`; sebaliknya `precipitation_probability_max` harian dibiarkan `null`
+  agar UI menampilkan "—", bukan 0% karangan.
 - `getWeather(lat, lon, { signal, timeoutMs })` dan
   `searchPlaces(query, { signal, timeoutMs })` tetap kompatibel dengan pemanggilan lama.
   Query ditrim, minimal 2 karakter, diencode dengan `URLSearchParams`, debounce **400 ms**.
@@ -117,8 +184,8 @@ adalah **wall time lokasi**, bukan instant di timezone browser. Formatter menjag
 jam/tanggal tersebut; perhitungan hari memakai UTC sebagai pembawa kalender saja, bukan
 mengonversi lokasi ke UTC. Jika input mengandung `Z`/offset, formatter memakai
 `Intl.DateTimeFormat` dengan timezone eksplisit. UI selalu meneruskan `weather.timezone`,
-termasuk current, hourly, daily, sunrise, sunset. Test mencakup Jakarta, Tokyo, London,
-New York, pergantian tanggal, dan tanggal transisi DST.
+termasuk current, hourly, daily, sunrise, sunset, jam lokal hero, dan fase hari pada latar.
+Test mencakup Jakarta, Tokyo, London, New York, pergantian tanggal, dan tanggal transisi DST.
 
 ### Penyimpanan & privasi
 
@@ -133,43 +200,37 @@ External text dirender melalui escaping React; tidak menggunakan `dangerouslySet
 
 ### Testing & quality gates
 
-```bash
-npm install
-npm run typecheck
-npm test
-npm run build
-npm audit
-npm audit --omit=dev
-```
-
-Vitest tetap digunakan; `jsdom` 26 ditambahkan **hanya sebagai dev dependency** untuk test
-interaksi React memakai `act`/ReactDOM yang sudah ada. Versi ini kompatibel dengan Node 20
-pada CI. Tidak ada framework E2E atau library validasi runtime baru. Semua API/GPS pada
-test dimock; test tidak membuktikan availability layanan live. Tidak ada script lint di repo.
-
-Uji timezone perangkat terpisah (juga dijalankan di CI):
-
-```bash
-for zone in UTC Asia/Jakarta Asia/Tokyo Europe/London America/New_York; do
-  TZ="$zone" npx vitest run src/__tests__/dates.test.ts src/__tests__/weather.test.ts || exit 1
-done
-```
+Vitest dipakai untuk unit dan interaksi React; `jsdom` 26 hanya dev dependency, dan
+komponen test mengaktifkannya per file lewat `// @vitest-environment jsdom`. Playwright +
+`@axe-core/playwright` menjalankan pemeriksaan responsif/aksesibilitas/interaksi di CI.
+Semua API/GPS pada test dimock; test tidak membuktikan availability layanan live.
+Lint kini tersedia: `npm run lint` (ESLint flat config) dan `npm run format` (Prettier).
 
 ### Batasan & tindak lanjut keamanan
 
-Audit dependency pada implementasi Phase 1 masih melaporkan **7 temuan dev-only**
-(5 high, 2 moderate), melalui toolchain Tailwind 3 (`braces`, `postcss-selector-parser`,
-dan dependency transitifnya). `npm audit fix` non-breaking tidak menyelesaikannya;
-perbaikan yang ditawarkan npm memerlukan Tailwind 4. Upgrade major tersebut **tidak**
-dipaksakan pada Phase 1 untuk menghindari migrasi styling/regression. `npm audit --omit=dev`
-saat validasi tidak menemukan vulnerability runtime. Hindari memproses CSS/glob dari input
-untrusted di build; jadwalkan evaluasi patch upstream/migrasi toolchain secara terpisah.
+`npm audit` **bersih (0 vulnerability)** baik penuh maupun `--omit=dev` sejak Tailwind 3
+dilepas (sebelumnya 7 temuan dev-only, lalu 3 moderate, semuanya dari rantai
+`postcss-selector-parser` → `tailwindcss`). `npm audit --omit=dev --audit-level=moderate`
+dijalankan sebagai langkah CI, jadi regresi dependensi runtime akan menggagalkan build.
 
 Schema sengaja fail-closed: payload forecast parsial (termasuk sunrise/sunset tidak tersedia
 pada kondisi polar) ditampilkan sebagai error yang dapat di-retry, bukan angka/jam palsu.
-Dukungan tampilan data parsial dan representasi “tidak tersedia” untuk UV/probabilitas hujan
-adalah kandidat Phase 2. Uji browser nyata untuk GPS, screen reader, dan kontrak API live
-masih diperlukan di lingkungan yang mengizinkan akses penyedia tersebut.
+Dukungan tampilan data parsial untuk UV/probabilitas hujan sudah tersedia sebagai "—"
+(`daily.rain`, `daily.uv`), tetapi kasus polar (sunrise/sunset tidak ada) tetap ditolak
+sepenuhnya — kandidat perbaikan berikutnya. Uji browser nyata untuk GPS, screen reader, dan
+kontrak API live masih diperlukan di lingkungan yang mengizinkan akses penyedia tersebut.
+
+---
+
+## Phase 2 — Premium weather experience
+
+Dashboard memakai hero cuaca, atmosfer adaptif, timeline 24 jam, prakiraan 7 hari dengan
+rentang suhu, grafik SVG (mode `hourly` dan `daily`), detail cuaca, indeks UV, siklus
+matahari, dan jam lokal — semuanya berbasis timezone lokasi. Pencarian keyboard, geolokasi,
+favorit lokal, error handling, dan refresh Phase 1 tetap tersedia.
+
+Lihat [catatan implementasi dan validasi Phase 2](PHASE2.md) untuk struktur komponen,
+batasan data, hasil pemeriksaan, dan langkah menjalankan browser checks.
 
 ---
 
@@ -180,18 +241,3 @@ Dibuat dengan 💜 oleh [**AXRYZURE**](https://github.com/superrrkyy) • 🇮�
 ⭐ Beri bintang jika bermanfaat!
 
 </div>
-
-## Phase 2 — Premium weather experience
-
-Dashboard kini memakai hero cuaca, atmosfer adaptif, timeline 24 jam, prakiraan
-7 hari dengan rentang suhu, grafik SVG, detail cuaca, indeks UV dan siklus
-matahari berbasis timezone lokasi. Pencarian keyboard, geolokasi, favorit lokal,
-error handling dan refresh Phase 1 tetap tersedia.
-
-Lihat [catatan implementasi dan validasi Phase 2](PHASE2.md) untuk struktur
-komponen, batasan data, hasil pemeriksaan dan langkah menjalankan browser checks:
-
-```bash
-npx playwright install --with-deps chromium
-npm run test:browser
-```

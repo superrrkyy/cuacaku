@@ -1,5 +1,5 @@
 import type { Place } from "../types/weather";
-import { ApiError, isAbortError, requestJson, type RequestOptions } from "./api";
+import { ApiError, endpoint, isAbortError, requestJson, type RequestOptions } from "./api";
 import { isRecord, validCoordinates } from "./validation";
 
 export class GeolocationError extends Error {
@@ -15,6 +15,8 @@ export function getPosition(signal?: AbortSignal): Promise<GeolocationPosition> 
     if (signal?.aborted) { reject(new ApiError("ABORTED")); return; }
     if (!navigator.geolocation) { reject(new GeolocationError("Browser tidak mendukung lokasi. Cari kota secara manual.")); return; }
     let settled = false;
+    // Ditugaskan sekali oleh setTimeout di bawah, setelah `finish` didefinisikan.
+    // eslint-disable-next-line prefer-const
     let timer: ReturnType<typeof setTimeout>;
     const finish = (error?: Error, position?: GeolocationPosition) => {
       if (settled) return;
@@ -44,7 +46,7 @@ export async function reversePlaceName(lat: number, lon: number, options: Reques
   if (!validCoordinates(lat, lon)) throw new ApiError("INVALID_COORDINATES");
   const params = new URLSearchParams({ lat: String(lat), lon: String(lon), format: "json", "accept-language": "id", zoom: "10" });
   try {
-    const data = await requestJson(`https://nominatim.openstreetmap.org/reverse?${params}`, options);
+    const data = await requestJson(endpoint(`https://nominatim.openstreetmap.org/reverse?${params}`, `/mock/reverse?${params}`), options);
     if (!isRecord(data) || !isRecord(data.address)) throw new ApiError("INVALID_RESPONSE");
     for (const key of ["city", "town", "county", "state"]) {
       const name = data.address[key];

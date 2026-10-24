@@ -2,7 +2,7 @@
 
 import type { Place, Weather } from "./types/weather";
 export type { Place, Weather } from "./types/weather";
-import { ApiError, requestJson, type RequestOptions } from "./lib/api";
+import { ApiError, endpoint, requestJson, type RequestOptions } from "./lib/api";
 import { isRecord, isPlace, validCoordinates, validateWeather } from "./lib/validation";
 export { hour, dayName, longDate } from "./lib/dates";
 
@@ -10,7 +10,7 @@ export async function searchPlaces(q: string, options: RequestOptions = {}): Pro
   const query = q.trim();
   if (query.length < 2) return [];
   const params = new URLSearchParams({ name: query, count: "6", language: "id" });
-  const data = await requestJson(`https://geocoding-api.open-meteo.com/v1/search?${params}`, options);
+  const data = await requestJson(endpoint(`https://geocoding-api.open-meteo.com/v1/search?${params}`, `/mock/geocoding?${params}`), options);
   if (!isRecord(data) || "error" in data) throw new ApiError("INVALID_RESPONSE");
   // Open-Meteo omits results entirely for a valid search with no matches.
   if (!("results" in data)) {
@@ -34,7 +34,7 @@ export async function getWeather(lat: number, lon: number, options: RequestOptio
     timezone: "auto",
     forecast_days: "7",
   });
-  const raw = await requestJson(`https://api.open-meteo.com/v1/forecast?${params}`, options);
+  const raw = await requestJson(endpoint(`https://api.open-meteo.com/v1/forecast?${params}`, `/mock/forecast?${params}`), options);
   const d = validateWeather(raw);
 
   // ambil 24 jam ke depan mulai dari jam sekarang

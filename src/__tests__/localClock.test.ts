@@ -3,6 +3,7 @@ import {
   formatLocalClock,
   formatLocalTimeZone,
   isValidTimeZone,
+  localClockDateTime,
 } from "../lib/localClock";
 
 const instant = new Date("2026-10-14T13:00:00.000Z");
@@ -43,5 +44,17 @@ describe("Phase 2.4 — local clock", () => {
 
   it("returns a readable timezone label", () => {
     expect(formatLocalTimeZone(instant, "Asia/Jakarta", "en-US")).toBe("GMT+7");
+  });
+
+  it("always renders hh:mm:ss, whatever separator the locale uses", () => {
+    // CLDR memberi id-ID pemisah titik ("20.00.00"); jam ini harus tetap konsisten.
+    expect(formatLocalClock(instant, "Asia/Jakarta", "id-ID")).toBe("20:00:00");
+    expect(formatLocalClock(instant, "Asia/Jakarta")).toBe("20:00:00");
+  });
+
+  it("builds a valid datetime timestamp for <time>", () => {
+    expect(localClockDateTime(instant, "Asia/Jakarta", "id-ID")).toBe("2026-10-14T20:00:00");
+    expect(localClockDateTime(instant, "America/New_York", "en-US")).toBe("2026-10-14T09:00:00");
+    expect(localClockDateTime(instant, "Not/A/Timezone")).toBeUndefined();
   });
 });

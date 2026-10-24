@@ -221,7 +221,7 @@ export default function Search({
       {expanded && (
         <div className="search-dropdown">
           {error ? (
-            <div className="px-4 py-3 text-sm">
+            <div className="search-message">
               <p role="alert">{error}</p>
               <button
                 onClick={() => {
@@ -229,13 +229,13 @@ export default function Search({
                   focused.current = true;
                   setRetry((n) => n + 1);
                 }}
-                className="text-button underline"
+                className="text-button text-button--link"
               >
                 Coba cari lagi
               </button>
             </div>
           ) : results.length === 0 ? (
-            <p className="px-4 py-3 text-white/60">
+            <p className="search-message search-message--empty">
               Kota tidak ditemukan. Coba nama kota lain.
             </p>
           ) : (
@@ -249,12 +249,12 @@ export default function Search({
                   onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => setActive(i)}
                   onClick={() => pick(place)}
-                  className={`cursor-pointer px-4 py-3 text-left text-white hover:bg-white/10 ${active === i ? "bg-white/10" : ""}`}
+                  className={`search-option${active === i ? " active" : ""}`}
                 >
-                  <div className="font-semibold">{place.name}</div>
-                  <div className="text-xs text-white/60">
+                  <span className="search-option-name">{place.name}</span>
+                  <span className="search-option-region">
                     {[place.admin1, place.country].filter(Boolean).join(", ")}
-                  </div>
+                  </span>
                 </li>
               ))}
             </ul>

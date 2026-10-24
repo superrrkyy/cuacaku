@@ -1,0 +1,13 @@
+# Artefak & dependensi (jangan diformat)
+dist/
+node_modules/
+coverage/
+test-results/
+playwright-report/
+package-lock.json
+*.tsbuildinfo
+REPO_REVIEW.md
+
+# Dokumen dengan tabel/HTML yang formatnya dijaga manual
+README.md
+PHASE2.md

@@ -20,6 +20,29 @@ export const errorMessage = (error: unknown): string => error instanceof ApiErro
 export const isAbortError = (error: unknown): boolean => error instanceof ApiError && error.code === "ABORTED";
 export interface RequestOptions { signal?: AbortSignal; timeoutMs?: number }
 
+/**
+ * Hanya pengembangan offline: `npm run dev:mock` menyajikan payload Open-Meteo
+ * tiruan dari server Vite yang sama. `import.meta.env.DEV` selalu `false` pada
+ * build produksi, sehingga cabang ini ikut terbuang (dead-code elimination) dan
+ * aplikasi tetap memanggil penyedia cuaca yang sesungguhnya.
+ */
+export function endpoint(live: string, mockPath: string): string {
+  if (import.meta.env.DEV && typeof sessionStorage !== "undefined") {
+    try {
+      // "1" = payload default; nilai lain diperlakukan sebagai nama skenario
+      // (clear|cloud|rain|storm|snow|fog|night|partial).
+      const mode = sessionStorage.getItem("cuacaku:mock");
+      if (mode) {
+        const scenario = mode === "1" ? "" : mode;
+        return `${mockPath}${scenario ? `?scenario=${encodeURIComponent(scenario)}` : ""}`;
+      }
+    } catch {
+      /* sessionStorage diblokir: pakai endpoint asli */
+    }
+  }
+  return live;
+}
+
 /** Deadline covers both headers and body. Own controller never aborts the caller's signal. */
 export async function requestJson(url: string, { signal, timeoutMs = 10000 }: RequestOptions = {}): Promise<unknown> {
   if (signal?.aborted) throw new ApiError("ABORTED");
