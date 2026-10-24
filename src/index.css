@@ -56,10 +56,13 @@ dd,
 figure {
   margin: 0;
 }
+/* `svg` sengaja TIDAK dipaksa `display: block`: ikon tetes hujan di
+   `.rain-chance` (HourlyForecast/DailyForecast) dan titik `.local-clock-dot`
+   harus tetap inline. SVG level blok (.weather-icon, .sun-arc,
+   .temperature-chart) sudah mengatur `display`-nya sendiri. */
 img,
 svg,
 video {
-  display: block;
   max-width: 100%;
 }
 input,
