@@ -68,3 +68,22 @@ jobs:
 
       - name: Responsive, accessibility, dan interaction checks
         run: npm run test:browser
+
+      # Log Actions berada di host blob yang tidak selalu dapat diakses (mis. dari
+      # sandbox review). Bila browser checks gagal, ringkasannya diposting ke PR
+      # lewat api.github.com agar tetap bisa didiagnosis.
+      - name: Laporkan kegagalan browser checks ke PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          npm run test:browser > browser-checks.log 2>&1
+          {
+            echo "### ❌ Browser checks gagal (di-posting otomatis oleh CI)"
+            echo
+            echo '```'
+            tail -n 180 browser-checks.log
+            echo '```'
+          } > browser-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file browser-report.md
