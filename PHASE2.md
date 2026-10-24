@@ -157,10 +157,19 @@ mengubah arsitektur data.
   Payload dibuat relatif terhadap jam Jakarta sekarang sehingga lolos validasi fail-closed.
   Cabang ini dijaga `import.meta.env.DEV` dan tereliminasi dari build produksi
   (fungsi `endpoint()` ter-minify menjadi `return live`).
+- **Regresi yang ditangkap browser checks.** Reset pengganti preflight semula meniru Tailwind
+  dengan `svg { display: block }` secara global. Run CI pertama pada branch ini **gagal** di
+  langkah browser checks: ikon tetes hujan di `.rain-chance` (HourlyForecast/DailyForecast)
+  turun ke baris sendiri sehingga tinggi kartu berubah. Aturan itu dipersempit menjadi
+  `max-width: 100%` saja — SVG level blok (`.weather-icon`, `.sun-arc`, `.temperature-chart`)
+  sudah mengatur `display` sendiri, dan SVG di `.locate-button` diblockify oleh flex. Run
+  berikutnya hijau penuh. Ini alasan `test:browser` tidak boleh dilewati meski unit test lulus.
 - **CI/CD**: `ci.yml` menambah langkah `npm run lint` dan `npm audit --omit=dev
   --audit-level=moderate`, serta memperluas regresi timezone ke suite `daylight`, `localClock`,
   `LocalClock`, dan `WeatherBackground`. `deploy.yml` memakai `npm ci` + cache npm (sebelumnya
-  `npm install`, yang bisa menyimpang dari lockfile).
+  `npm install`, yang bisa menyimpang dari lockfile). Ditambah satu langkah diagnostik: bila
+  browser checks gagal, 180 baris terakhir output-nya diposting ke PR lewat `api.github.com`
+  karena log job Actions tersimpan di host blob yang tidak selalu dapat diakses dari sandbox.
 - **Dokumentasi**: README ditulis ulang agar sesuai kondisi repo (Tailwind dilepas, lint/format,
   jumlah test, dev:mock, audit bersih), `CONTRIBUTING.md` dibersihkan dari sisa template proyek
   lain (`pip install -r requirements.txt`, contoh commit "CryptoKu"/"API key YouTube",
@@ -186,7 +195,7 @@ mengubah arsitektur data.
 | `npm audit` | **0 vulnerability** |
 | `npm audit --omit=dev` | **0 vulnerability** |
 | `npm run dev:mock` | Payload mock lolos validasi `getWeather()` (current ∈ hourly, sisa ≥ 24 jam, `daily[0]` = tanggal current) |
-| `npm run test:browser` | ⛔ tidak dijalankan di sandbox: tidak ada binary Chromium dan unduhan browser diblokir jaringan → diverifikasi lewat GitHub Actions pada branch ini |
+| `npm run test:browser` | ✅ **lulus di CI (Chromium nyata)** pada PR #23 — run `40091546308`, seluruh 12 langkah `success`: tanpa overflow halaman, 7 baris harian, 24 kartu per jam, target sentuh 44 px, fokus terlihat, **0 axe violation** (wcag2a/2aa/21aa) pada 320/375/390/768/1024/1280/1440 px, grafik 7 hari, reduced motion. Tidak dapat dijalankan di sandbox (tanpa binary Chromium, unduhan browser diblokir) |
 
 Regresi timezone dijalankan ulang secara lokal untuk 9 suite (`dates`, `weather`, `visuals`,
 `daylight`, `localClock`, `LocalClock`, `WeatherBackground`, `DailyForecast`,
@@ -197,11 +206,14 @@ bergantung pada `TZ` runner.
 
 ### Yang masih perlu ditinjau manusia
 
-- **Tampilan fase hari dan jam lokal belum ditinjau di browser nyata** (sandbox tanpa Chromium).
-  Kelas CSS dan struktur DOM teruji di jsdom, tetapi kesan visual `.atmosphere--dawn/dusk/night`
-  dan tata letak `.hero-footer` perlu dilihat langsung.
-- Browser checks (Playwright + axe) belum diperluas untuk jam lokal/fase hari; axe tetap berjalan
-  pada 7 lebar viewport di CI.
+- Browser checks **sudah** lulus di Chromium nyata, tetapi yang mereka assert adalah metrik
+  (overflow, jumlah baris/kartu, target sentuh, fokus, axe) — bukan kesan visual. Nuansa
+  `.atmosphere--dawn/dusk/night` dan proporsi `.hero-footer` + jam lokal tetap perlu dilihat
+  mata manusia; `npm run dev:mock` disediakan untuk itu (tanpa jaringan).
+- Playwright belum punya assertion khusus untuk jam lokal/fase hari (mis. jam hero tampil dan
+  mengikuti timezone lokasi). Unit test menutup logikanya; menambahkan cek DOM di browser suite
+  adalah langkah lanjut yang murah.
+- Screenshot Playwright tetap artefak di `test-results/` yang di-ignore, bukan baseline pixel-diff.
 
 ## Remaining limitations / Phase 3
 
